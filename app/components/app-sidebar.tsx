@@ -70,32 +70,15 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={sidebarMenuButtonClassName({ size: "lg" })}
-                >
-                  <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-                    <Image
-                      src="/logo-cgkn.png"
-                      alt="Logo CGKN"
-                      width={32}
-                      height={32}
-                      priority
-                      className="rounded-md"
-                    />
-                  </div>
-                  <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-sm font-semibold">CGKN</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Project Management
-                    </span>
-                  </div>
-                </button>
-              </DropdownMenuTrigger>
-              {/* Tempat DropdownMenuContent jika suatu saat dibutuhkan di header */}
-            </DropdownMenu>
+            <SidebarMenuButton as={Link} href="/" size="lg">
+                <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg">
+                <Image src="/logo-cgkn.png" alt="Logo CGKN" width={32} height={32} priority className="rounded-md" />
+                </div>
+                <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-semibold">CGKN</span>
+                <span className="truncate text-xs text-muted">Project Management</span>
+                </div>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
 
