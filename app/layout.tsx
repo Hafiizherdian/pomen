@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/app/components/theme/theme-provider";
@@ -10,21 +11,20 @@ import {
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
+import { getProjects } from "@/lib/queries";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
   description: "DIGIMAR UYE",
 };
+
+async function SidebarLoader() {
+  const projects = await getProjects();
+  return <AppSidebar projects={projects} />;
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -36,10 +36,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <ThemeScript />
       </head>
-      <body className="min-h-full bg-background text-foreground">
+      <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <SidebarProvider>
-            <AppSidebar />
+            <Suspense fallback={<AppSidebar projects={[]} />}>
+              <SidebarLoader />
+            </Suspense>
             <SidebarInset>
               <header className="flex h-12 items-center gap-2 px-4">
                 <SidebarTrigger />

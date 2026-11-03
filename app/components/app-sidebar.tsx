@@ -1,211 +1,136 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import {
-  BarChart3,
-  ChevronRight,
-  ChevronsUpDown,
-  FolderKanban,
-  Home,
-  Inbox,
-  LogOut,
-  Plus,
-  User,
-  Users,
-} from "lucide-react";
+import { FolderKanban, Home, LayoutList, Layers } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/app/components/ui/dropdown-menu";
 import {
   Sidebar,
   SidebarCollapsible,
   SidebarCollapsibleContent,
   SidebarCollapsibleTrigger,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
-  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
-  SidebarInput,
   SidebarMenu,
-  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarRail,
   SidebarSeparator,
-  sidebarMenuButtonClassName,
 } from "@/app/components/ui/sidebar";
+
+type SidebarProject = { id: string; name: string; slug: string };
 
 const mainNav = [
   { title: "Dashboard", href: "/", icon: Home },
-  { title: "Inbox", href: "/inbox", icon: Inbox, badge: "12" },
-  { title: "Laporan", href: "/laporan", icon: BarChart3 },
-  { title: "Tim", href: "/tim", icon: Users },
+  { title: "Project", href: "/projects", icon: LayoutList },
+  { title: "Pilar Content", href: "/pilar", icon: Layers },
 ];
 
-const projects = [
-  { title: "Post", href: "/projects" },
-  { title: "Reels", href: "/projects/2" },
-  { title: "Kalender", href: "/projects/3" },
-];
+/** Isi menu. `pathname` null = belum diketahui (tidak ada item yang aktif). */
+function NavContent({
+  projects,
+  pathname,
+}: {
+  projects: SidebarProject[];
+  pathname: string | null;
+}) {
+  return (
+    <SidebarContent>
+      <SidebarGroup>
+        <SidebarGroupLabel>Menu</SidebarGroupLabel>
+        <SidebarGroupContent>
+          <SidebarMenu>
+            {mainNav.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  as={Link}
+                  href={item.href}
+                  isActive={pathname === item.href}
+                  tooltip={item.title}
+                >
+                  <item.icon />
+                  <span>{item.title}</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarGroupContent>
+      </SidebarGroup>
 
-export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
+      <SidebarSeparator />
+
+      <SidebarCollapsible defaultOpen>
+        <SidebarGroup>
+          <SidebarGroupLabel as={SidebarCollapsibleTrigger}>Project</SidebarGroupLabel>
+          <SidebarCollapsibleContent>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {projects.map((project) => {
+                  const href = `/projects/${project.slug}`;
+                  return (
+                    <SidebarMenuItem key={project.id}>
+                      <SidebarMenuButton
+                        as={Link}
+                        href={href}
+                        isActive={pathname === href}
+                        tooltip={project.name}
+                      >
+                        <FolderKanban />
+                        <span>{project.name}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarCollapsibleContent>
+        </SidebarGroup>
+      </SidebarCollapsible>
+    </SidebarContent>
+  );
+}
+
+/** Satu-satunya tempat yang memakai usePathname(), jadi harus dibungkus Suspense. */
+function ActiveNavContent({ projects }: { projects: SidebarProject[] }) {
   const pathname = usePathname();
+  return <NavContent projects={projects} pathname={pathname} />;
+}
 
+export function AppSidebar({
+  projects,
+  ...props
+}: React.ComponentProps<typeof Sidebar> & { projects: SidebarProject[] }) {
   return (
     <Sidebar collapsible="icon" {...props}>
-      {/* Header */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton as={Link} href="/" size="lg">
-                <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg">
-                <Image src="/logo-cgkn.png" alt="Logo CGKN" width={32} height={32} priority className="rounded-md" />
-                </div>
-                <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+              <Image
+                src="/logo-cgkn.png"
+                alt="Logo CGKN"
+                width={32}
+                height={32}
+                priority
+                className="size-8 shrink-0 rounded-md object-contain"
+              />
+              <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate text-sm font-semibold">CGKN</span>
                 <span className="truncate text-xs text-muted">Project Management</span>
-                </div>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        <div className="group-data-[collapsible=icon]:hidden">
-          <SidebarInput placeholder="Cari..." aria-label="Cari" />
-        </div>
       </SidebarHeader>
 
-      {/* Content */}
-      <SidebarContent>
-        {/* Menu utama */}
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    as={Link}
-                    href={item.href}
-                    isActive={pathname === item.href}
-                    tooltip={item.title}
-                  >
-                    <item.icon />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                  {item.badge && (
-                    <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        {/* Group collapsible dengan submenu */}
-        <SidebarCollapsible defaultOpen>
-          <SidebarGroup>
-            <SidebarGroupLabel as={SidebarCollapsibleTrigger}>
-              Project
-            </SidebarGroupLabel>
-            <SidebarGroupAction title="Tambah project">
-              <Plus />
-              <span className="sr-only">Tambah project</span>
-            </SidebarGroupAction>
-
-            <SidebarCollapsibleContent>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {/* Item dengan submenu */}
-                  <SidebarCollapsible className="group/submenu" defaultOpen>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton
-                        as={SidebarCollapsibleTrigger}
-                        tooltip="Semua project"
-                      >
-                        <FolderKanban />
-                        <span>Semua project</span>
-                        <ChevronRight className="ml-auto transition-transform group-data-[state=open]/submenu:rotate-90" />
-                      </SidebarMenuButton>
-
-                      <SidebarCollapsibleContent>
-                        <SidebarMenuSub>
-                          {projects.map((project) => (
-                            <SidebarMenuSubItem key={project.href}>
-                              <SidebarMenuSubButton
-                                as={Link}
-                                href={project.href}
-                                isActive={pathname === project.href}
-                              >
-                                <span>{project.title}</span>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </SidebarCollapsibleContent>
-                    </SidebarMenuItem>
-                  </SidebarCollapsible>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarCollapsibleContent>
-          </SidebarGroup>
-        </SidebarCollapsible>
-      </SidebarContent>
-
-      {/* Footer */}
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className={sidebarMenuButtonClassName({ size: "lg" })}
-                >
-                  <Avatar className="h-8 w-8 shrink-0 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-primary/10 text-primary">
-                      B
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-                    <span className="truncate text-sm font-semibold">Test</span>
-                    <span className="truncate text-xs text-muted-foreground">
-                      Team Test
-                    </span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-4 group-data-[collapsible=icon]:hidden" />
-                </button>
-              </DropdownMenuTrigger>
-              
-              <DropdownMenuContent side="top" align="start" className="w-56">
-                <DropdownMenuItem className="gap-2 cursor-pointer">
-                  <User className="size-4 text-muted-foreground" />
-                  <span>Profil</span>
-                </DropdownMenuItem>
-                
-                <DropdownMenuItem className="gap-2 cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
-                  <LogOut className="size-4" />
-                  <span>Keluar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+      <Suspense fallback={<NavContent projects={projects} pathname={null} />}>
+        <ActiveNavContent projects={projects} />
+      </Suspense>
 
       <SidebarRail />
     </Sidebar>
