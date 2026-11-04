@@ -29,10 +29,15 @@ export const PILAR_COLUMNS: Record<PilarKind, PilarColumn[]> = {
   ],
 };
 
+export const PILAR_PER_ACCOUNT: PilarKind[] = ["breakdown", "story"];
+
+export type PilarAccount = { id: string; name: string; position: number };
+
 export type PilarRow = {
   id: string;
   kind: PilarKind;
   position: number;
+  account_id: string | null;
   data: Record<string, string>;
 };
 

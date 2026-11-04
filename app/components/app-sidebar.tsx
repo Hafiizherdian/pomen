@@ -27,8 +27,8 @@ type SidebarProject = { id: string; name: string; slug: string };
 
 const mainNav = [
   { title: "Dashboard", href: "/", icon: Home },
+  { title: "Pilar Konten", href: "/pilar", icon: Layers },
   { title: "Project", href: "/projects", icon: LayoutList },
-  { title: "Pilar Content", href: "/pilar", icon: Layers },
 ];
 
 /** Isi menu. `pathname` null = belum diketahui (tidak ada item yang aktif). */
