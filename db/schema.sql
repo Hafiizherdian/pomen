@@ -85,6 +85,20 @@ begin
   end if;
 end $$;
 
+create table if not exists project_groups (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  position int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+alter table projects
+  add column if not exists group_id uuid references project_groups(id) on delete set null;
+
+alter table project_groups
+  add column if not exists color text not null default '#faf2f2';
+
+create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);
 create index if not exists tasks_column_idx on tasks(column_id, position);

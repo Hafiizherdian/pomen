@@ -3,7 +3,15 @@ export interface Project {
   name: string;
   description: string | null;
   slug: string;
+  group_id: string | null;
   created_at: string;
+}
+
+export interface ProjectGroup {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
 }
 
 export interface ProjectStats extends Project {

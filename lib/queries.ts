@@ -1,12 +1,20 @@
 import "server-only";
 import { connection } from "next/server";
 import { pool } from "@/lib/db";
-import type { Column, Profile, Project, ProjectStats, Task } from "@/lib/types";
+import type { Column, Profile, Project, ProjectGroup, ProjectStats, Task } from "@/lib/types";
 
 export async function getProjects() {
   await connection();
   const { rows } = await pool.query<Project>(
-    "select id, name, description, slug, created_at from projects order by created_at",
+    "select id, name, description, slug, group_id, created_at from projects order by created_at",
+  );
+  return rows;
+}
+
+export async function getProjectGroups() {
+  await connection();
+  const { rows } = await pool.query<ProjectGroup>(
+    "select id, name, color, position from project_groups order by position, created_at",
   );
   return rows;
 }
@@ -14,7 +22,7 @@ export async function getProjects() {
 export async function getProjectStats() {
   await connection();
   const { rows } = await pool.query<ProjectStats>(`
-    select p.id, p.name, p.description, p.slug, p.created_at,
+    select p.id, p.name, p.description, p.slug, p.group_id, p.created_at,
            count(t.id)::int as total,
            count(t.id) filter (where t.is_done)::int as done,
            count(t.id) filter (where not t.is_done and t.due_date < current_date)::int as overdue
@@ -30,7 +38,7 @@ export async function getProjectStats() {
 export async function getProjectBySlug(slug: string) {
   await connection();
   const { rows } = await pool.query<Project>(
-    "select id, name, description, slug, created_at from projects where slug = $1",
+    "select id, name, description, slug, group_id, created_at from projects where slug = $1",
     [slug],
   );
   return rows[0] ?? null;

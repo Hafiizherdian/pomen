@@ -11,7 +11,7 @@ import {
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
-import { getProjects } from "@/lib/queries";
+import { getProjectGroups, getProjects } from "@/lib/queries";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -22,8 +22,8 @@ export const metadata: Metadata = {
 };
 
 async function SidebarLoader() {
-  const projects = await getProjects();
-  return <AppSidebar projects={projects} />;
+  const [projects, groups] = await Promise.all([getProjects(), getProjectGroups()]);
+  return <AppSidebar projects={projects} groups={groups} />;
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -39,12 +39,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <SidebarProvider>
-            <Suspense fallback={<AppSidebar projects={[]} />}>
+            <Suspense fallback={<AppSidebar projects={[]} groups={[]} />}>
               <SidebarLoader />
             </Suspense>
             <SidebarInset>
               <header className="flex h-12 items-center gap-2 px-4">
-                <SidebarTrigger />
+                {/* <SidebarTrigger /> */}
                 <ThemeToggle className="ml-auto" />
               </header>
               {children}

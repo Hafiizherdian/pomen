@@ -38,6 +38,7 @@ function slugify(text: string) {
 export async function createProject(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
+  const groupId = String(formData.get("group_id") ?? "") || null;
   if (!name) throw new Error("Nama project wajib diisi");
 
   const base = slugify(name);
@@ -46,9 +47,10 @@ export async function createProject(formData: FormData) {
     for (let i = 0; i < 5; i++) {
       const candidate = i === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
       const res = await client.query<{ id: string }>(
-        `insert into projects (name, description, slug) values ($1, $2, $3)
+        `insert into projects (name, description, slug, group_id)
+         values ($1, $2, $3, $4::uuid)
          on conflict (slug) do nothing returning id`,
-        [name, description, candidate],
+        [name, description, candidate, groupId],
       );
       if (res.rowCount) {
         await client.query(
@@ -146,5 +148,72 @@ export async function reorderTasks(updates: { columnId: string; taskIds: string[
       );
     }
   });
+  refresh();
+}
+
+/* Group project */
+
+const DEFAULT_GROUP_COLOR = "#faf2f2";
+
+function cleanColor(value: string) {
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value.toLowerCase() : DEFAULT_GROUP_COLOR;
+}
+
+export async function createProjectGroup(formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim().slice(0, 100);
+  const color = cleanColor(String(formData.get("color") ?? ""));
+  if (!name) throw new Error("Nama group wajib diisi");
+  await pool.query(
+    `insert into project_groups (name, color, position)
+     values ($1, $2, (select coalesce(max(position), -1) + 1 from project_groups))`,
+    [name, color],
+  );
+  refresh();
+}
+
+export async function setProjectGroupColor(id: string, color: string) {
+  await pool.query("update project_groups set color = $2 where id = $1", [
+    id,
+    cleanColor(color),
+  ]);
+  refresh();
+}
+
+export async function renameProjectGroup(id: string, name: string) {
+  const clean = name.trim().slice(0, 100);
+  if (!clean) return;
+  await pool.query("update project_groups set name = $2 where id = $1", [id, clean]);
+  refresh();
+}
+
+/** Project di dalam group tidak ikut terhapus; group_id-nya jadi null (ON DELETE SET NULL). */
+export async function deleteProjectGroup(id: string) {
+  await pool.query("delete from project_groups where id = $1", [id]);
+  refresh();
+}
+
+/** groupId kosong = tanpa group. */
+export async function setProjectGroup(projectId: string, groupId: string) {
+  await pool.query("update projects set group_id = $2::uuid where id = $1", [
+    projectId,
+    groupId || null,
+  ]);
+  refresh();
+}
+
+/* Edit project */
+
+export async function renameProject(id: string, name: string) {
+  const clean = name.trim().slice(0, 100);
+  if (!clean) throw new Error("Nama project wajib diisi");
+  await pool.query("update projects set name = $2 where id = $1", [id, clean]);
+  refresh();
+}
+
+export async function updateProjectDescription(id: string, description: string) {
+  await pool.query("update projects set description = $2 where id = $1", [
+    id,
+    description.trim().slice(0, 500) || null,
+  ]);
   refresh();
 }

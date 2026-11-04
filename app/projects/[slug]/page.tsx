@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { KanbanBoard } from "@/app/components/kanban-board";
+import { KanbanBoard } from "@/app/components/ui/kanban-board";
 import { getBoard, getProfiles, getProjectBySlug } from "@/lib/queries";
 
 export default function ProjectPage({ params }: { params: Promise<{ slug: string }> }) {
