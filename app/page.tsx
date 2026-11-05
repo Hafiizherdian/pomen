@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { getProjectStats } from "@/lib/queries";
+import { GroupProgressList, type GroupProgress } from "@/app/components/group-progress";
+import { getProjectGroups, getProjectStats } from "@/lib/queries";
+import type { ProjectStats } from "@/lib/types";
+
+const UNGROUPED_COLOR = "#94a3b8";
 
 export default function Home() {
   return (
@@ -16,8 +20,19 @@ export default function Home() {
   );
 }
 
+function toItems(list: ProjectStats[]) {
+  return list.map(({ id, name, slug, total, done, overdue }) => ({
+    id,
+    name,
+    slug,
+    total,
+    done,
+    overdue,
+  }));
+}
+
 async function Overview() {
-  const projects = await getProjectStats();
+  const [projects, groups] = await Promise.all([getProjectStats(), getProjectGroups()]);
   const total = projects.reduce((n, p) => n + p.total, 0);
   const done = projects.reduce((n, p) => n + p.done, 0);
   const overdue = projects.reduce((n, p) => n + p.overdue, 0);
@@ -27,6 +42,26 @@ async function Overview() {
     { label: "Total task", value: total },
     { label: "Selesai", value: done },
     { label: "Lewat tenggat", value: overdue },
+  ];
+
+  const ungrouped = projects.filter((p) => !p.group_id);
+  const progress: GroupProgress[] = [
+    ...groups.map((group) => ({
+      id: group.id,
+      name: group.name || "Tanpa nama",
+      color: group.color,
+      projects: toItems(projects.filter((p) => p.group_id === group.id)),
+    })),
+    ...(ungrouped.length > 0
+      ? [
+          {
+            id: "none",
+            name: groups.length > 0 ? "Tanpa group" : "Semua project",
+            color: UNGROUPED_COLOR,
+            projects: toItems(ungrouped),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -42,34 +77,16 @@ async function Overview() {
 
       <div className="space-y-3">
         <h2 className="text-sm font-medium">Progres project</h2>
-        {projects.length === 0 && (
+        {progress.length === 0 ? (
           <p className="text-sm text-muted">
             Belum ada project.{" "}
             <Link href="/projects" className="underline">
               Buat project
             </Link>
           </p>
+        ) : (
+          <GroupProgressList groups={progress} />
         )}
-        {projects.map((p) => {
-          const pct = p.total ? Math.round((p.done / p.total) * 100) : 0;
-          return (
-            <Link
-              key={p.id}
-              href={`/projects/${p.slug}`}
-              className="block rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-default"
-            >
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{p.name}</span>
-                <span className="text-muted tabular-nums">
-                  {p.done}/{p.total} selesai
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-default">
-                <div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} />
-              </div>
-            </Link>
-          );
-        })}
       </div>
     </>
   );

@@ -1,7 +1,7 @@
 import "server-only";
 import { connection } from "next/server";
 import { pool } from "@/lib/db";
-import type { Column, Profile, Project, ProjectGroup, ProjectStats, Task } from "@/lib/types";
+import type { Column, Profile, Project, ProjectGroup, ProjectStats, ProjectWithDetails, Task } from "@/lib/types";
 
 export async function getProjects() {
   await connection();
@@ -37,8 +37,14 @@ export async function getProjectStats() {
 
 export async function getProjectBySlug(slug: string) {
   await connection();
-  const { rows } = await pool.query<Project>(
-    "select id, name, description, slug, group_id, created_at from projects where slug = $1",
+  const { rows } = await pool.query<ProjectWithDetails>(
+    `select p.id, p.name, p.description, p.slug, p.group_id, p.created_at,
+            p.pilar, p.jenis, p.tema, p.akun, p.keyword, p.hook, p.cta,
+            p.prod_date, p.editor_date, p.selesai_date, p.upload_date, p.pic_id,
+            pr.full_name as pic_name, pr.email as pic_email
+     from projects p
+     left join profiles pr on pr.id = p.pic_id
+     where p.slug = $1`,
     [slug],
   );
   return rows[0] ?? null;

@@ -21,3 +21,16 @@ export async function getPilarAccounts(): Promise<PilarAccount[]> {
   );
   return rows;
 }
+
+/** Daftar pilar untuk dropdown: nilai unik `pilar` dari tabel Pilar Konten dan Breakdown. */
+export async function getPilarOptions(): Promise<string[]> {
+  await connection();
+  const { rows } = await pool.query<{ pilar: string }>(`
+    select distinct trim(data->>'pilar') as pilar
+    from pilar_rows
+    where kind in ('overview', 'breakdown')
+      and trim(coalesce(data->>'pilar', '')) <> ''
+    order by 1
+  `);
+  return rows.map((row) => row.pilar);
+}

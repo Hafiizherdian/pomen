@@ -36,10 +36,17 @@ function slugify(text: string) {
 /* Project */
 
 export async function createProject(formData: FormData) {
-  const name = String(formData.get("name") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim() || null;
+  const text = (key: string) =>
+    String(formData.get(key) ?? "").trim().slice(0, 500) || null;
+  const date = (key: string) => {
+    const value = String(formData.get(key) ?? "");
+    return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null;
+  };
+
+  const name = String(formData.get("name") ?? "").trim().slice(0, 200);
   const groupId = String(formData.get("group_id") ?? "") || null;
-  if (!name) throw new Error("Nama project wajib diisi");
+  const picId = String(formData.get("pic") ?? "") || null;
+  if (!name) throw new Error("Judul konten wajib diisi");
 
   const base = slugify(name);
 
@@ -47,10 +54,30 @@ export async function createProject(formData: FormData) {
     for (let i = 0; i < 5; i++) {
       const candidate = i === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
       const res = await client.query<{ id: string }>(
-        `insert into projects (name, description, slug, group_id)
-         values ($1, $2, $3, $4::uuid)
+        `insert into projects
+           (name, description, slug, group_id, pilar, jenis, tema, akun, keyword, hook, cta,
+            prod_date, editor_date, selesai_date, upload_date, pic_id)
+         values ($1, $2, $3, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
+                 $12::date, $13::date, $14::date, $15::date, $16::uuid)
          on conflict (slug) do nothing returning id`,
-        [name, description, candidate, groupId],
+        [
+          name,
+          text("description"),
+          candidate,
+          groupId,
+          text("pilar"),
+          text("jenis"),
+          text("tema"),
+          text("akun"),
+          text("keyword"),
+          text("hook"),
+          text("cta"),
+          date("prod"),
+          date("editor"),
+          date("selesai"),
+          date("upload"),
+          picId,
+        ],
       );
       if (res.rowCount) {
         await client.query(
@@ -85,6 +112,11 @@ export async function createColumn(projectId: string, name: string) {
     [projectId, clean],
   );
   refresh();
+}
+
+/** Versi FormData dari createColumn, supaya bisa dipakai langsung sebagai `action` form. */
+export async function addColumnAction(projectId: string, formData: FormData) {
+  await createColumn(projectId, String(formData.get("name") ?? ""));
 }
 
 export async function renameColumn(id: string, name: string) {

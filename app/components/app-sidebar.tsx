@@ -181,7 +181,7 @@ export function AppSidebar({
               />
               <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
                 <span className="truncate text-sm font-semibold">CGKN</span>
-                <span className="truncate text-xs text-muted">Project Management</span>
+                <span className="truncate text-xs text-muted">DIGIMONSTAH</span>
               </div>
             </SidebarMenuButton>
             

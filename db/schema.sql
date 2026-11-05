@@ -98,6 +98,20 @@ alter table projects
 alter table project_groups
   add column if not exists color text not null default '#faf2f2';
 
+alter table projects
+  add column if not exists pilar text,
+  add column if not exists jenis text,
+  add column if not exists tema text,
+  add column if not exists akun text,
+  add column if not exists keyword text,
+  add column if not exists hook text,
+  add column if not exists cta text,
+  add column if not exists prod_date date,
+  add column if not exists editor_date date,
+  add column if not exists selesai_date date,
+  add column if not exists upload_date date,
+  add column if not exists pic_id uuid references profiles(id) on delete set null;
+
 create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);

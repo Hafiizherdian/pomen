@@ -287,21 +287,6 @@ export function KanbanBoard({
             </div>
           ))}
 
-          <form onSubmit={handleAddColumn} className="flex w-80 shrink-0 gap-2">
-            <input
-              value={newColumn}
-              onChange={(e) => setNewColumn(e.target.value)}
-              placeholder="Kolom baru..."
-              className={inputClass}
-            />
-            <button
-              type="submit"
-              aria-label="Tambah kolom"
-              className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground"
-            >
-              <Plus className="size-4" />
-            </button>
-          </form>
         </div>
       </DragDropContext>
 

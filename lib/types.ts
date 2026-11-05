@@ -56,3 +56,22 @@ export interface TaskInput {
   due_date: string;
   assigned_to: string;
 }
+
+export interface ProjectDetails {
+  pilar: string | null;
+  jenis: string | null;
+  tema: string | null;
+  akun: string | null;
+  keyword: string | null;
+  hook: string | null;
+  cta: string | null;
+  prod_date: string | null;
+  editor_date: string | null;
+  selesai_date: string | null;
+  upload_date: string | null;
+  pic_id: string | null;
+  pic_name: string | null;
+  pic_email: string | null;
+}
+
+export type ProjectWithDetails = Project & ProjectDetails;

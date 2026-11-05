@@ -11,15 +11,33 @@ import {
   ProjectGroupSelect,
 } from "@/app/components/project-group-controls";
 import { ProjectNameInput } from "@/app/components/project-edit";
-import { getProjectGroups, getProjectStats } from "@/lib/queries";
+import { getProfiles, getProjectGroups, getProjectStats } from "@/lib/queries";
 import type { ProjectGroup, ProjectStats } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { ArrowUpRight } from "lucide-react";
+import { getPilarOptions } from "@/lib/pilar-queries";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-focus";
 
 const UNGROUPED_COLOR = "#94a3b8";
+
+function Field({
+  label,
+  wide,
+  children,
+}: {
+  label: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={cn("grid gap-1 text-xs font-medium text-muted", wide && "sm:col-span-2")}>
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}
 
 export default function ProjectsPage({
   searchParams,
@@ -117,10 +135,12 @@ async function ProjectsContent({
 }: {
   searchParams: Promise<{ group?: string }>;
 }) {
-  const [{ group: groupParam }, projects, groups] = await Promise.all([
+  const [{ group: groupParam }, projects, groups, profiles, pilarOptions] = await Promise.all([
     searchParams,
     getProjectStats(),
     getProjectGroups(),
+    getProfiles(),
+    getPilarOptions(),
   ]);
 
   const ungrouped = projects.filter((p) => !p.group_id);
@@ -135,46 +155,90 @@ async function ProjectsContent({
 
   return (
     <>
-      <form
+            <form
         action={createProject}
-        className="grid max-w-xl gap-3 rounded-xl border border-border bg-surface p-4"
+        className="grid max-w-3xl gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2"
       >
-        <input name="pilar" required placeholder="Pilar Konten" className={inputClass} />
-        <input name="name" required placeholder="Judul Konten" className={inputClass} />
-        <input name="jenis" required placeholder="Jenis Konten" className={inputClass} />
-        <input name="tema" required placeholder="Tema" className={inputClass} />
-        <input name="akun" required placeholder="Akun" className={inputClass} />
-        <input name="keyword" required placeholder="Fokus Keyword" className={inputClass} />
-        <input name="hook" required placeholder="HOOK" className={inputClass} />
-        <input name="cta" required placeholder="Call To Action" className={inputClass} />
-        <input name="prod" required placeholder="Tgl Produksi" className={inputClass} />
-        <input name="editor" required placeholder="Tgl masuk Editor" className={inputClass} />
-        <input name="selesai" required placeholder="Tgl Selesai" className={inputClass} />
-        <input name="pic" required placeholder="PIC" className={inputClass} />
-        <input name="upload" required placeholder="Tgl Upload" className={inputClass} />
-        <textarea
-          name="description"
-          rows={2}
-          placeholder="Deskripsi (opsional)"
-          className={inputClass}
-        />
-        <select
-          key={selected?.id ?? ""}
-          name="group_id"
-          defaultValue={selected?.id ?? ""}
-          className={inputClass}
-          aria-label="Group"
-        >
-          <option value="">Tanpa group</option>
-          {groups.map((group) => (
-            <option key={group.id} value={group.id}>
-              {group.name}
+        <Field label="Pilar Konten">
+          <select name="pilar" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              {pilarOptions.length === 0
+                ? "Belum ada pilar. Isi dulu di halaman Pilar Konten"
+                : "Pilih pilar konten"}
             </option>
-          ))}
-        </select>
+            {pilarOptions.map((pilar) => (
+              <option key={pilar} value={pilar}>
+                {pilar}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Judul Konten">
+          <input name="name" required className={inputClass} />
+        </Field>
+        <Field label="Jenis Konten">
+          <input name="jenis" required className={inputClass} />
+        </Field>
+        <Field label="Tema">
+          <input name="tema" required className={inputClass} />
+        </Field>
+        <Field label="Akun">
+          <input name="akun" required className={inputClass} />
+        </Field>
+        <Field label="Fokus Keyword">
+          <input name="keyword" required className={inputClass} />
+        </Field>
+        <Field label="HOOK">
+          <input name="hook" required className={inputClass} />
+        </Field>
+        <Field label="Call To Action">
+          <input name="cta" required className={inputClass} />
+        </Field>
+        <Field label="Tgl Produksi">
+          <input type="date" name="prod" required className={inputClass} />
+        </Field>
+        <Field label="Tgl Masuk Editor">
+          <input type="date" name="editor" required className={inputClass} />
+        </Field>
+        <Field label="Tgl Selesai">
+          <input type="date" name="selesai" required className={inputClass} />
+        </Field>
+        <Field label="Tgl Upload">
+          <input type="date" name="upload" required className={inputClass} />
+        </Field>
+        <Field label="PIC">
+          <select name="pic" required defaultValue="" className={inputClass}>
+            <option value="" disabled>
+              Pilih PIC
+            </option>
+            {profiles.map((profile) => (
+              <option key={profile.id} value={profile.id}>
+                {profile.full_name || profile.email}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Group">
+          <select
+            key={selected?.id ?? ""}
+            name="group_id"
+            defaultValue={selected?.id ?? ""}
+            className={inputClass}
+          >
+            <option value="">Tanpa group</option>
+            {groups.map((group) => (
+              <option key={group.id} value={group.id}>
+                {group.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Deskripsi (opsional)" wide>
+          <textarea name="description" rows={2} className={inputClass} />
+        </Field>
         <button
           type="submit"
-          className="h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground"
+          className="h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-foreground sm:col-span-2"
         >
           Buat project
         </button>
