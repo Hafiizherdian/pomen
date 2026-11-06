@@ -112,6 +112,9 @@ alter table projects
   add column if not exists upload_date date,
   add column if not exists pic_id uuid references profiles(id) on delete set null;
 
+alter table projects
+  add column if not exists status text not null default 'Belum';
+
 create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);

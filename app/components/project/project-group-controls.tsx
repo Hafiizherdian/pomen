@@ -13,6 +13,8 @@ import {
 import { FolderIcon } from "@/app/components/ui/folder-icon";
 import type { ProjectGroup } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {ColorSwatchPicker} from "@heroui/react";
+import {HeartFill} from "@gravity-ui/icons";
 
 export const GROUP_COLORS = [
   "#f97fb3",
@@ -79,19 +81,29 @@ function ColorSwatches({
 
 /** Ganti warna folder group yang sedang dibuka. */
 export function GroupColorPicker({ id, color }: { id: string; color: string }) {
-  const [draft, setDraft] = useState(color);
   const [, startTransition] = useTransition();
 
   return (
-    <ColorSwatches
-      value={draft}
-      onChange={(next, commit) => {
-        setDraft(next);
-        if (commit && next.toLowerCase() !== color.toLowerCase()) {
-          startTransition(() => setProjectGroupColor(id, next));
+    <ColorSwatchPicker
+      value={color}
+      onChange={(newColor) => {
+        // Tambahkan argumen "hex" di dalam toString()
+        const hexColor = newColor.toString("hex");
+
+        if (hexColor && hexColor.toLowerCase() !== color.toLowerCase()) {
+          startTransition(() => setProjectGroupColor(id, hexColor));
         }
       }}
-    />
+    >
+      {GROUP_COLORS.map((c) => (
+        <ColorSwatchPicker.Item key={c} color={c}>
+          <ColorSwatchPicker.Swatch />
+          <ColorSwatchPicker.Indicator>
+            <HeartFill />
+          </ColorSwatchPicker.Indicator>
+        </ColorSwatchPicker.Item>
+      ))}
+    </ColorSwatchPicker>
   );
 }
 
@@ -105,7 +117,7 @@ export function NewGroupTile() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-32 flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border p-2 text-muted transition-colors hover:bg-default/60 hover:text-foreground"
+        className="flex w-32 flex-col items-center gap-1 rounded-xl border-2 border-dashed border-border p-2 text-muted transition-colors hover:bg-default/60 hover:text-foreground cursor-pointer"
       >
         <div className="flex aspect-[600/520] w-full items-center justify-center">
           <Plus className="size-8" />

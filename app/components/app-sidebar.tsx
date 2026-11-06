@@ -123,7 +123,12 @@ function NavContent({
                               href={href}
                               isActive={pathname === href}
                             >
-                              <FolderKanban className="size-4 shrink-0" />
+                              {section.color && (
+                                <FolderIcon 
+                                    color={section.color} 
+                                    className="size-4 shrink-0" 
+                                />
+                                )}
                               <span>{project.name}</span>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>

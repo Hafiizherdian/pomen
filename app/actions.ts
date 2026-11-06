@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { pool, withTransaction } from "@/lib/db";
 import type { TaskInput } from "@/lib/types";
+import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 
 const PRIORITIES = ["low", "medium", "high"];
 
@@ -46,7 +47,21 @@ export async function createProject(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim().slice(0, 200);
   const groupId = String(formData.get("group_id") ?? "") || null;
   const picId = String(formData.get("pic") ?? "") || null;
+  const pilar = text("pilar");
+  const akun = text("akun");
+
   if (!name) throw new Error("Judul konten wajib diisi");
+  if (!pilar) throw new Error("Pilar konten wajib dipilih");
+  if (!akun) throw new Error("Akun wajib dipilih");
+
+  const jenisRaw = text("jenis");
+  const jenis = (JENIS_KONTEN as readonly string[]).includes(jenisRaw ?? "")
+    ? jenisRaw
+    : null;
+  const statusRaw = String(formData.get("status") ?? "");
+  const status = (PROJECT_STATUSES as readonly string[]).includes(statusRaw)
+    ? statusRaw
+    : "Belum";
 
   const base = slugify(name);
 
@@ -56,19 +71,19 @@ export async function createProject(formData: FormData) {
       const res = await client.query<{ id: string }>(
         `insert into projects
            (name, description, slug, group_id, pilar, jenis, tema, akun, keyword, hook, cta,
-            prod_date, editor_date, selesai_date, upload_date, pic_id)
+            prod_date, editor_date, selesai_date, upload_date, pic_id, status)
          values ($1, $2, $3, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
-                 $12::date, $13::date, $14::date, $15::date, $16::uuid)
+                 $12::date, $13::date, $14::date, $15::date, $16::uuid, $17)
          on conflict (slug) do nothing returning id`,
         [
           name,
           text("description"),
           candidate,
           groupId,
-          text("pilar"),
-          text("jenis"),
+          pilar,
+          jenis,
           text("tema"),
-          text("akun"),
+          akun,
           text("keyword"),
           text("hook"),
           text("cta"),
@@ -77,6 +92,7 @@ export async function createProject(formData: FormData) {
           date("selesai"),
           date("upload"),
           picId,
+          status,
         ],
       );
       if (res.rowCount) {
@@ -247,5 +263,55 @@ export async function updateProjectDescription(id: string, description: string) 
     id,
     description.trim().slice(0, 500) || null,
   ]);
+  refresh();
+}
+
+export async function updateProjectStatus(id: string, status: string) {
+  if (!(PROJECT_STATUSES as readonly string[]).includes(status)) {
+    throw new Error("Status tidak valid");
+  }
+  await pool.query("update projects set status = $2 where id = $1", [id, status]);
+  refresh();
+}
+
+const TEXT_FIELD_LIMITS: Record<string, number> = {
+  name: 200,
+  tema: 500,
+  keyword: 500,
+  hook: 500,
+  cta: 500,
+};
+const DATE_FIELDS = ["prod_date", "editor_date", "selesai_date", "upload_date"];
+
+/** Edit satu kolom project dari tabel (inline edit). */
+export async function updateProjectField(id: string, field: string, value: string) {
+  const v = value.trim();
+  let param: string | null;
+  let cast = "";
+
+  if (Object.hasOwn(TEXT_FIELD_LIMITS, field)) {
+    if (field === "name" && !v) throw new Error("Judul konten wajib diisi");
+    param = v.slice(0, TEXT_FIELD_LIMITS[field]) || null;
+  } else if (DATE_FIELDS.includes(field)) {
+    param = /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+    cast = "::date";
+  } else if (field === "pilar" || field === "akun") {
+    if (!v) throw new Error("Kolom ini wajib diisi");
+    param = v.slice(0, 500);
+  } else if (field === "jenis") {
+    param = (JENIS_KONTEN as readonly string[]).includes(v) ? v : null;
+  } else if (field === "status") {
+    if (!(PROJECT_STATUSES as readonly string[]).includes(v)) {
+      throw new Error("Status tidak valid");
+    }
+    param = v;
+  } else if (field === "pic_id") {
+    param = v || null;
+    cast = "::uuid";
+  } else {
+    throw new Error("Kolom tidak valid");
+  }
+
+  await pool.query(`update projects set ${field} = $2${cast} where id = $1`, [id, param]);
   refresh();
 }

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { PilarContent } from "@/app/components/pilar-content";
+import { PilarContent } from "@/app/components/pilar/pilar-content";
 import { getPilarAccounts, getPilarRows } from "@/lib/pilar-queries";
 
 export default function PilarPage() {

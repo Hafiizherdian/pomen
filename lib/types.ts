@@ -74,4 +74,26 @@ export interface ProjectDetails {
   pic_email: string | null;
 }
 
+export interface ProjectRow {
+  id: string;
+  name: string;
+  slug: string;
+  group_id: string | null;
+  pilar: string | null;
+  jenis: string | null;
+  tema: string | null;
+  akun: string | null;
+  keyword: string | null;
+  hook: string | null;
+  cta: string | null;
+  prod_date: string | null;
+  editor_date: string | null;
+  selesai_date: string | null;
+  upload_date: string | null;
+  status: string;
+  pic_id: string | null;
+  pic_name: string | null;
+  pic_email: string | null;
+}
+
 export type ProjectWithDetails = Project & ProjectDetails;

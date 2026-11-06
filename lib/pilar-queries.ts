@@ -34,3 +34,15 @@ export async function getPilarOptions(): Promise<string[]> {
   `);
   return rows.map((row) => row.pilar);
 }
+
+/** Daftar akun untuk dropdown: nama akun yang sudah diisi di halaman Pilar Konten. */
+export async function getAccountOptions(): Promise<string[]> {
+  await connection();
+  const { rows } = await pool.query<{ name: string }>(
+    `select trim(name) as name
+     from pilar_accounts
+     where trim(name) <> ''
+     order by position, created_at`,
+  );
+  return rows.map((row) => row.name);
+}
