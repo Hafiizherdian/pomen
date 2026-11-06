@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { pool, withTransaction } from "@/lib/db";
 import type { TaskInput } from "@/lib/types";
 import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
+import { listOptionValues } from "@/lib/master-queries";
 
 const PRIORITIES = ["low", "medium", "high"];
 
@@ -54,14 +55,14 @@ export async function createProject(formData: FormData) {
   if (!pilar) throw new Error("Pilar konten wajib dipilih");
   if (!akun) throw new Error("Akun wajib dipilih");
 
-  const jenisRaw = text("jenis");
-  const jenis = (JENIS_KONTEN as readonly string[]).includes(jenisRaw ?? "")
-    ? jenisRaw
-    : null;
-  const statusRaw = String(formData.get("status") ?? "");
-  const status = (PROJECT_STATUSES as readonly string[]).includes(statusRaw)
-    ? statusRaw
-    : "Belum";
+  const [jenisList, statusList] = await Promise.all([
+  listOptionValues("jenis"),
+  listOptionValues("status"),
+]);
+const jenisRaw = text("jenis");
+const jenis = jenisRaw && jenisList.includes(jenisRaw) ? jenisRaw : null;
+const statusRaw = String(formData.get("status") ?? "");
+const status = statusList.includes(statusRaw) ? statusRaw : (statusList[0] ?? "Belum");
 
   const base = slugify(name);
 
@@ -267,7 +268,7 @@ export async function updateProjectDescription(id: string, description: string) 
 }
 
 export async function updateProjectStatus(id: string, status: string) {
-  if (!(PROJECT_STATUSES as readonly string[]).includes(status)) {
+  if (!(await listOptionValues("status")).includes(status)) {
     throw new Error("Status tidak valid");
   }
   await pool.query("update projects set status = $2 where id = $1", [id, status]);
@@ -299,12 +300,12 @@ export async function updateProjectField(id: string, field: string, value: strin
     if (!v) throw new Error("Kolom ini wajib diisi");
     param = v.slice(0, 500);
   } else if (field === "jenis") {
-    param = (JENIS_KONTEN as readonly string[]).includes(v) ? v : null;
+  param = (await listOptionValues("jenis")).includes(v) ? v : null;
   } else if (field === "status") {
-    if (!(PROJECT_STATUSES as readonly string[]).includes(v)) {
-      throw new Error("Status tidak valid");
-    }
-    param = v;
+    if (!(await listOptionValues("status")).includes(v)) {
+    throw new Error("Status tidak valid");
+  }
+  param = v;
   } else if (field === "pic_id") {
     param = v || null;
     cast = "::uuid";

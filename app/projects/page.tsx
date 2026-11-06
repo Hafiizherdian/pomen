@@ -12,6 +12,7 @@ import { ProjectTable } from "@/app/components/project/project-table";
 import { getProfiles, getProjectGroups, getProjectRows } from "@/lib/queries";
 import { getAccountOptions, getPilarOptions } from "@/lib/pilar-queries";
 import { cn } from "@/lib/utils";
+import { getMasterOptions } from "@/lib/master-queries";
 
 const UNGROUPED_COLOR = "#94a3b8";
 
@@ -72,7 +73,8 @@ async function ProjectsContent({
 }: {
   searchParams: Promise<{ group?: string }>;
 }) {
-  const [{ group: groupParam }, groups, profiles, pilarOptions, accountOptions, rows] =
+  // Pindahkan fetch master (getMasterOptions) ke sini, bersama yang lainnya
+  const [{ group: groupParam }, groups, profiles, pilarOptions, accountOptions, rows, master] =
     await Promise.all([
       searchParams,
       getProjectGroups(),
@@ -80,6 +82,7 @@ async function ProjectsContent({
       getPilarOptions(),
       getAccountOptions(),
       getProjectRows(),
+      getMasterOptions(), // <--- Ditambahkan di sini
     ]);
 
   const ungrouped = rows.filter((r) => !r.group_id);
@@ -146,6 +149,8 @@ async function ProjectsContent({
             profiles={profiles}
             groups={groups}
             defaultGroupId={selected?.id ?? ""}
+            statusOptions={master.statuses}
+            jenisOptions={master.jenis}
           />
         </div>
 
@@ -155,6 +160,9 @@ async function ProjectsContent({
           profiles={profiles}
           pilarOptions={pilarOptions}
           accountOptions={accountOptions}
+          statusValues={master.statuses}
+          jenisValues={master.jenis}
+          doneStatuses={master.doneStatuses}
         />
       </section>
     </>

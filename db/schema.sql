@@ -115,6 +115,32 @@ alter table projects
 alter table projects
   add column if not exists status text not null default 'Belum';
 
+create table if not exists master_options (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('status', 'jenis')),
+  value text not null,
+  position int not null default 0,
+  is_final boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (kind, value)
+);
+
+do $$
+begin
+  if not exists (select 1 from master_options where kind = 'status') then
+    insert into master_options (kind, value, position, is_final) values
+      ('status', 'Belum', 0, false),
+      ('status', 'Proses', 1, false),
+      ('status', 'Selesai', 2, true);
+  end if;
+  if not exists (select 1 from master_options where kind = 'jenis') then
+    insert into master_options (kind, value, position) values
+      ('jenis', 'Carousel', 0),
+      ('jenis', 'Single Image', 1),
+      ('jenis', 'Video/Reels', 2);
+  end if;
+end $$;
+
 create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);

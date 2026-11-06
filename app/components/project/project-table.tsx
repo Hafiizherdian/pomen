@@ -6,7 +6,6 @@ import { ArrowUpRight } from "lucide-react";
 
 import { setProjectGroup, updateProjectField } from "@/app/actions";
 import { DeleteProjectButton } from "@/app/components/project/delete-project-button";
-import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 import type { Profile, ProjectGroup, ProjectRow } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -127,12 +126,18 @@ export function ProjectTable({
   profiles,
   pilarOptions,
   accountOptions,
+  statusValues,
+  jenisValues,
+  doneStatuses,
 }: {
   rows: ProjectRow[];
   groups: ProjectGroup[];
   profiles: Profile[];
   pilarOptions: string[];
   accountOptions: string[];
+  statusValues: string[];
+  jenisValues: string[];
+  doneStatuses: string[];
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -144,8 +149,6 @@ export function ProjectTable({
     value: p.id,
     label: p.full_name || p.email,
   }));
-  const statusOptions: Option[] = PROJECT_STATUSES.map((s) => ({ value: s, label: s }));
-  const jenisOptions: Option[] = JENIS_KONTEN.map((j) => ({ value: j, label: j }));
 
   return (
     <div className="space-y-2">
@@ -178,7 +181,7 @@ export function ProjectTable({
                   key={row.id}
                   className={cn(
                     "border-b border-border align-top last:border-b-0",
-                    row.status === "Selesai" && "bg-yellow-200 dark:bg-yellow-500/25",
+                    doneStatuses.includes(row.status) && "bg-yellow-200 dark:bg-yellow-500/25",
                   )}
                 >
                   <td className="px-3 py-2.5 tabular-nums">{index + 1}</td>
@@ -213,7 +216,7 @@ export function ProjectTable({
                     <SelectCell
                       value={row.jenis ?? ""}
                       placeholder="Pilih jenis"
-                      options={toOptions(JENIS_KONTEN, row.jenis ?? "")}
+                      options={toOptions(jenisValues, row.jenis ?? "")}
                       onSave={(v) => save(row.id, "jenis", v)}
                     />
                   </td>
@@ -284,7 +287,7 @@ export function ProjectTable({
                   <td className={cn(cellW, "min-w-28")}>
                     <SelectCell
                       value={row.status}
-                      options={statusOptions}
+                      options={toOptions(statusValues, row.status)}
                       onSave={(v) => save(row.id, "status", v)}
                     />
                   </td>

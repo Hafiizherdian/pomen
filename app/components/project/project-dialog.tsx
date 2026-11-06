@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { Plus, X } from "lucide-react";
 
 import { createProject } from "@/app/actions";
-import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 import type { Profile, ProjectGroup } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -31,12 +30,16 @@ function Field({
 export function NewProjectDialog({
   pilarOptions,
   accountOptions,
+  statusOptions,
+  jenisOptions,
   profiles,
   groups,
   defaultGroupId,
 }: {
   pilarOptions: string[];
   accountOptions: string[];
+  statusOptions: string[];
+  jenisOptions: string[];
   profiles: Profile[];
   groups: ProjectGroup[];
   defaultGroupId: string;
@@ -105,7 +108,7 @@ export function NewProjectDialog({
             <Field label="Jenis Konten">
               <select name="jenis" defaultValue="" className={inputClass}>
                 <option value="">Pilih jenis konten</option>
-                {JENIS_KONTEN.map((jenis) => (
+                {jenisOptions.map((jenis) => (
                   <option key={jenis} value={jenis}>
                     {jenis}
                   </option>
@@ -161,8 +164,8 @@ export function NewProjectDialog({
               </select>
             </Field>
             <Field label="Status">
-              <select name="status" defaultValue="Belum" className={inputClass}>
-                {PROJECT_STATUSES.map((s) => (
+              <select name="status" defaultValue={statusOptions[0] ?? ""} className={inputClass}>
+                {statusOptions.map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>
