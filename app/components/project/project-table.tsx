@@ -93,6 +93,18 @@ function DateCell({ value, onSave }: { value: string; onSave: (value: string) =>
   );
 }
 
+function MonthCell({ value, onSave }: { value: string; onSave: (value: string) => void }) {
+  return (
+    <input
+      key={value}
+      type="month"
+      defaultValue={value}
+      className={dateClass}
+      onChange={(e) => e.target.value && onSave(e.target.value)}
+    />
+  );
+}
+
 /** Pastikan nilai yang sudah tersimpan tetap muncul walau sudah tidak ada di daftar pilihan. */
 function toOptions(values: readonly string[], current: string): Option[] {
   const list = current && !values.includes(current) ? [current, ...values] : [...values];
@@ -103,6 +115,7 @@ const headers = [
   "NO",
   "Judul Konten",
   "Group",
+  "Bulan",
   "Pilar Konten",
   "Jenis Konten",
   "Tema",
@@ -151,7 +164,7 @@ export function ProjectTable({
   }));
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 w-full">
       <p className="h-4 text-xs text-muted">
         {pending ? "Menyimpan..." : "Klik sel untuk mengedit. Auto Save."}
       </p>
@@ -200,6 +213,13 @@ export function ProjectTable({
                       placeholder="Tanpa group"
                       options={groupOptions}
                       onSave={(v) => startTransition(() => setProjectGroup(row.id, v))}
+                    />
+                  </td>
+
+                  <td className={cn(cellW, "min-w-36")}>
+                    <MonthCell
+                      value={row.periode ?? ""}
+                      onSave={(v) => save(row.id, "periode", v)}
                     />
                   </td>
 

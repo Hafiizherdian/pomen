@@ -94,6 +94,7 @@ export interface ProjectRow {
   pic_id: string | null;
   pic_name: string | null;
   pic_email: string | null;
+  periode: string | null;
 }
 
 export type ProjectWithDetails = Project & ProjectDetails;

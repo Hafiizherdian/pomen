@@ -141,6 +141,17 @@ begin
   end if;
 end $$;
 
+alter table projects
+  add column if not exists periode text
+  check (periode is null or periode ~ '^[0-9]{4}-(0[1-9]|1[0-2])$');
+
+-- Isi awal untuk data lama: bulan Tgl Produksi, atau bulan dibuatnya.
+update projects
+set periode = to_char(coalesce(prod_date, (created_at at time zone 'Asia/Jakarta')::date), 'YYYY-MM')
+where periode is null;
+
+create index if not exists projects_periode_idx on projects(periode);
+
 create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);

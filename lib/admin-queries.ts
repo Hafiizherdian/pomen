@@ -82,15 +82,23 @@ export async function getReport(
 ): Promise<Report> {
   await connection();
   const { from, to } = await getBounds(range);
-  const params = [from, to, doneStatuses];
+
+  // $1 selalu daftar status selesai; filter periode memakai parameter berikutnya.
+  const filter =
+    range === "minggu"
+      ? { sql: "p.prod_date between $2::date and $3::date", params: [from, to] }
+      : range === "bulan"
+        ? { sql: "p.periode = to_char($2::date, 'YYYY-MM')", params: [from] }
+        : { sql: "true", params: [] as (string | null)[] };
+  const params = [doneStatuses, ...filter.params];
 
   const countBy = (labelExpr: string, join = "") =>
     pool.query<CountRow>(
       `select ${labelExpr} as label,
               count(*)::int as total,
-              count(*) filter (where p.status = any($3::text[]))::int as done
+              count(*) filter (where p.status = any($1::text[]))::int as done
        from projects p ${join}
-       where ${DATE_FILTER}
+       where ${filter.sql}
        group by 1
        order by total desc, label`,
       params,

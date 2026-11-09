@@ -96,7 +96,7 @@ function EditableTable({
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-border bg-surface">
         <table className="w-full min-w-[40rem] border-collapse text-sm">
-          <thead className="bg-default/60 text-left">
+          <thead className="bg-[#f97fb3] text-left">
             <tr>
               {columns.map((col) => (
                 <th

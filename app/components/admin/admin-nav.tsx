@@ -9,6 +9,7 @@ const items = [
   { href: "/admin/anggota", label: "Anggota Tim" },
   { href: "/admin/master-data", label: "Data status & jenis" },
   { href: "/admin/group", label: "Group" },
+  { href: "/admin/impor", label: "Impor data" },
   { href: "/admin/laporan", label: "Laporan" },
 ];
 

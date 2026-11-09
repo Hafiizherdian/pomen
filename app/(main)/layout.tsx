@@ -1,20 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { ThemeProvider } from "@/app/components/theme/theme-provider";
 import { ThemeScript } from "@/app/components/theme/theme-script";
 import { ThemeToggle } from "@/app/components/theme/theme-toggle";
-import {
-  SidebarProvider,
-  SidebarInset,
-  SidebarTrigger,
-} from "@/app/components/ui/sidebar";
+import { SidebarProvider, SidebarInset } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
+import { geistMono, geistSans } from "@/app/fonts";
 import { getProjectGroups, getProjects } from "@/lib/queries";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -26,7 +19,7 @@ async function SidebarLoader() {
   return <AppSidebar projects={projects} groups={groups} />;
 }
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="id"
@@ -44,7 +37,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             </Suspense>
             <SidebarInset>
               <header className="flex h-12 items-center gap-2 px-4">
-                {/* <SidebarTrigger /> */}
                 <ThemeToggle className="ml-auto" />
               </header>
               {children}

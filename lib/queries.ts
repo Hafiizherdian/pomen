@@ -55,7 +55,7 @@ export async function getProjectRows() {
   const { rows } = await pool.query<ProjectRow>(`
     select p.id, p.name, p.slug, p.group_id, p.pilar, p.jenis, p.tema, p.akun,
            p.keyword, p.hook, p.cta, p.prod_date, p.editor_date, p.selesai_date,
-           p.upload_date, p.status,  p.pic_id,
+           p.upload_date, p.status, p.periode, p.pic_id,
            pr.full_name as pic_name, pr.email as pic_email
     from projects p
     left join profiles pr on pr.id = p.pic_id

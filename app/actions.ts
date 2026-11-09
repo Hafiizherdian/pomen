@@ -6,6 +6,7 @@ import { pool, withTransaction } from "@/lib/db";
 import type { TaskInput } from "@/lib/types";
 import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 import { listOptionValues } from "@/lib/master-queries";
+import { isPeriode } from "@/lib/periode";
 
 const PRIORITIES = ["low", "medium", "high"];
 
@@ -63,6 +64,8 @@ const jenisRaw = text("jenis");
 const jenis = jenisRaw && jenisList.includes(jenisRaw) ? jenisRaw : null;
 const statusRaw = String(formData.get("status") ?? "");
 const status = statusList.includes(statusRaw) ? statusRaw : (statusList[0] ?? "Belum");
+const periodeRaw = String(formData.get("periode") ?? "");
+const periode = isPeriode(periodeRaw) ? periodeRaw : null;
 
   const base = slugify(name);
 
@@ -72,9 +75,10 @@ const status = statusList.includes(statusRaw) ? statusRaw : (statusList[0] ?? "B
       const res = await client.query<{ id: string }>(
         `insert into projects
            (name, description, slug, group_id, pilar, jenis, tema, akun, keyword, hook, cta,
-            prod_date, editor_date, selesai_date, upload_date, pic_id, status)
+            prod_date, editor_date, selesai_date, upload_date, pic_id, status, periode)
          values ($1, $2, $3, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
                  $12::date, $13::date, $14::date, $15::date, $16::uuid, $17)
+                 coalesce($18::text, to_char(now() at time zone 'Asia/Jakarta', 'YYYY-MM')))
          on conflict (slug) do nothing returning id`,
         [
           name,
@@ -94,6 +98,7 @@ const status = statusList.includes(statusRaw) ? statusRaw : (statusList[0] ?? "B
           date("upload"),
           picId,
           status,
+          periode,
         ],
       );
       if (res.rowCount) {
@@ -306,6 +311,9 @@ export async function updateProjectField(id: string, field: string, value: strin
     throw new Error("Status tidak valid");
   }
   param = v;
+  } else if (field === "periode") {
+    if (!isPeriode(v)) throw new Error("Bulan tidak valid");
+    param = v;
   } else if (field === "pic_id") {
     param = v || null;
     cast = "::uuid";

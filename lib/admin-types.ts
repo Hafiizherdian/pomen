@@ -75,3 +75,15 @@ export interface Report {
   byPic: CountRow[];
   byJenis: CountRow[];
 }
+
+/* Impor */
+
+export interface ImportSummary {
+  inserted: number;
+  skipped: number;
+  newPics: string[];
+  newJenis: string[];
+  newStatus: string[];
+}
+
+export type ImportResult = { ok: true; data: ImportSummary } | { ok: false; error: string };

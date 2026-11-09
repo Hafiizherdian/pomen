@@ -4,7 +4,7 @@ import { getPilarAccounts, getPilarRows } from "@/lib/pilar-queries";
 
 export default function PilarPage() {
   return (
-    <div className="flex-1 space-y-4 p-6">
+    <div className="flex-1 p-6">
       <div>
         <h1 className="text-2xl font-semibold">Pilar Content</h1>
         {/* <p className="text-sm text-muted">Panduan pilar konten dan target produksi</p> */}

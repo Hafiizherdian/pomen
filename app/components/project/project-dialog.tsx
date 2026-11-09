@@ -35,6 +35,7 @@ export function NewProjectDialog({
   profiles,
   groups,
   defaultGroupId,
+  defaultPeriode,
 }: {
   pilarOptions: string[];
   accountOptions: string[];
@@ -43,6 +44,7 @@ export function NewProjectDialog({
   profiles: Profile[];
   groups: ProjectGroup[];
   defaultGroupId: string;
+  defaultPeriode: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -104,6 +106,15 @@ export function NewProjectDialog({
             </Field>
             <Field label="Judul Konten *">
               <input name="name" required autoFocus className={inputClass} />
+            </Field>
+                        <Field label="Bulan *">
+              <input
+                type="month"
+                name="periode"
+                required
+                defaultValue={defaultPeriode}
+                className={inputClass}
+              />
             </Field>
             <Field label="Jenis Konten">
               <select name="jenis" defaultValue="" className={inputClass}>

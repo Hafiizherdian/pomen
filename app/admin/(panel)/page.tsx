@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { FolderKanban, Layers, LayoutList, Users } from "lucide-react";
+import { FolderKanban, Layers, LayoutList, Upload, Users } from "lucide-react";
 
 import { requireAdmin } from "@/lib/admin-auth";
 import { getAdminCounts } from "@/lib/admin-queries";
@@ -38,6 +38,13 @@ async function Overview() {
       icon: FolderKanban,
       stat: `${counts.groups} group, ${counts.projects} project`,
       text: "Urutkan group dan pindahkan banyak project sekaligus.",
+    },
+    {
+      href: "/admin/impor",
+      title: "Impor data",
+      icon: Upload,
+      stat: "Excel atau CSV",
+      text: "Unggah data konten dari spreadsheet ke database.",
     },
     {
       href: "/admin/laporan",
