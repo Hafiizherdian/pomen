@@ -181,9 +181,10 @@ export function GroupManager({
                     onChange={toggleAll}
                   />
                 </th>
-                <th className="border-b border-border px-3 py-2.5 font-semibold">Judul Konten</th>
                 <th className="border-b border-border px-3 py-2.5 font-semibold">Akun</th>
                 <th className="border-b border-border px-3 py-2.5 font-semibold">Group</th>
+                <th className="border-b border-border px-3 py-2.5 font-semibold">Judul Konten</th>
+                
               </tr>
             </thead>
             <tbody>
@@ -204,11 +205,12 @@ export function GroupManager({
                         onChange={() => toggle(project.id)}
                       />
                     </td>
-                    <td className="px-3 py-2 font-medium">{project.name}</td>
                     <td className="px-3 py-2 text-muted">{project.akun || "-"}</td>
                     <td className="px-3 py-2 text-muted">
                       {project.group_id ? (groupName.get(project.group_id) ?? "-") : "Tanpa group"}
                     </td>
+                    <td className="px-3 py-2 font-medium">{project.name}</td>
+                    
                   </tr>
                 ))
               )}

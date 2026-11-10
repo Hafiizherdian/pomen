@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { FolderKanban, Home, LayoutList, Layers } from "lucide-react";
+import { AtSign, Home, LayoutList, Layers } from "lucide-react";
 
 import {
   Sidebar,
@@ -28,7 +28,13 @@ import {
 } from "@/app/components/ui/sidebar";
 import { FolderIcon } from "@/app/components/ui/folder-icon";
 
-type SidebarProject = { id: string; name: string; slug: string; group_id: string | null };
+type SidebarProject = {
+  id: string;
+  name: string;
+  slug: string;
+  group_id: string | null;
+  akun: string | null;
+};
 type SidebarGroupData = { id: string; name: string; color: string };
 
 const mainNav = [
@@ -41,10 +47,12 @@ const mainNav = [
 function NavContent({
   projects,
   groups,
+  accounts,
   pathname,
 }: {
   projects: SidebarProject[];
   groups: SidebarGroupData[];
+  accounts: string[];
   pathname: string | null;
 }) {
   // Satu bagian per group (yang berisi project), lalu project tanpa group.
@@ -61,6 +69,20 @@ function NavContent({
       color: null as string | null,
       items: projects.filter((p) => !p.group_id),
     },
+  ].filter((section) => section.items.length > 0);
+
+  // Satu bagian per akun: urutan dari halaman Pilar Konten, lalu akun lain yang
+  // ada di data project, lalu project tanpa akun.
+  const groupColor = new Map(groups.map((g) => [g.id, g.color]));
+  const extraAkun = [...new Set(projects.map((p) => p.akun?.trim() ?? "").filter(Boolean))]
+    .filter((name) => !accounts.includes(name))
+    .sort();
+  const akunSections: { name: string | null; items: SidebarProject[] }[] = [
+    ...[...accounts, ...extraAkun].map((name) => ({
+      name: name as string | null,
+      items: projects.filter((p) => p.akun?.trim() === name),
+    })),
+    { name: null, items: projects.filter((p) => !p.akun?.trim()) },
   ].filter((section) => section.items.length > 0);
 
   return (
@@ -87,64 +109,120 @@ function NavContent({
         </SidebarGroupContent>
       </SidebarGroup>
 
+      {/* --- MENU AKUN (BISA DI-COLLAPSE PER AKUN) --- */}
+      {akunSections.length > 0 && (
+        <>
+          <SidebarSeparator />
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Akun</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {akunSections.map((section) => {
+                  // Folder akun otomatis terbuka jika berisi project yang sedang dibuka.
+                  const hasActive = section.items.some(
+                    (p) => pathname === `/projects/${p.slug}`,
+                  );
+                  return (
+                    <SidebarMenuItem key={`akun:${section.name ?? "none"}`}>
+                      <SidebarCollapsible defaultOpen={hasActive}>
+                        <SidebarMenuButton as={SidebarCollapsibleTrigger} className="font-medium">
+                          <AtSign />
+                          <span>{section.name ?? "Tanpa akun"}</span>
+                        </SidebarMenuButton>
+
+                        <SidebarCollapsibleContent>
+                          <SidebarMenuSub>
+                            {section.items.map((project) => {
+                              const href = `/projects/${project.slug}`;
+                              const color = project.group_id
+                                ? groupColor.get(project.group_id)
+                                : undefined;
+                              return (
+                                <SidebarMenuSubItem key={project.id}>
+                                  <SidebarMenuSubButton
+                                    as={Link}
+                                    href={href}
+                                    isActive={pathname === href}
+                                  >
+                                    {color && (
+                                      <FolderIcon color={color} className="size-4 shrink-0" />
+                                    )}
+                                    <span>{project.name}</span>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              );
+                            })}
+                          </SidebarMenuSub>
+                        </SidebarCollapsibleContent>
+                      </SidebarCollapsible>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
       <SidebarSeparator />
 
-      {/* --- MENU PROJECT (BISA DI-COLLAPSE PER FOLDER) --- */}
-      <SidebarGroup>
-        <SidebarGroupLabel>Project</SidebarGroupLabel>
-        <SidebarGroupContent>
-          <SidebarMenu>
-            {sections.map((section) => (
-              <SidebarMenuItem key={section.id ?? "none"}>
-                <SidebarCollapsible defaultOpen>
-                  
-                  {/* TRIGGER (TOMBOL FOLDER) */}
-                    {section.name && (
-                    <SidebarMenuButton as={SidebarCollapsibleTrigger} className="font-medium">
-                        {section.color && (
-                        <FolderIcon 
-                            color={section.color} 
-                            className="size-4 shrink-0" 
-                        />
+        {/* --- MENU PROJECT (BISA DI-COLLAPSE PER FOLDER) --- */}
+        {/* --- MENU PROJECT (BISA DI-COLLAPSE PER FOLDER) --- */}
+        <SidebarGroup>
+            <SidebarGroupLabel>Project</SidebarGroupLabel>
+            <SidebarGroupContent>
+            <SidebarMenu>
+                {sections.map((section) => {
+                  // Tambahkan pengecekan apakah ada project aktif di dalam folder ini
+                  const hasActive = section.items.some(
+                    (p) => pathname === `/projects/${p.slug}`
+                  );
+
+                  return (
+                    <SidebarMenuItem key={section.id ?? "none"}>
+                        {/* Ubah defaultOpen menjadi defaultOpen={hasActive} */}
+                        <SidebarCollapsible defaultOpen={hasActive}>
+                        
+                        {/* TRIGGER (TOMBOL FOLDER) */}
+                        {section.name && (
+                            <SidebarMenuButton as={SidebarCollapsibleTrigger} className="font-medium">
+                            {section.color && (
+                                <FolderIcon color={section.color} className="size-4 shrink-0" />
+                            )}
+                            <span>{section.name}</span>
+                            </SidebarMenuButton>
                         )}
-                        <span>{section.name}</span>
-                    </SidebarMenuButton>
-                    )}
-                  
-                  {/* ISI FOLDER (DAFTAR PROJECT) */}
-                  <SidebarCollapsibleContent>
-                    <SidebarMenuSub>
-                      {section.items.map((project) => {
-                        const href = `/projects/${project.slug}`;
-                        return (
-                          <SidebarMenuSubItem key={project.id}>
-                            <SidebarMenuSubButton
-                              as={Link}
-                              href={href}
-                              isActive={pathname === href}
-                            >
-                              {section.color && (
-                                <FolderIcon 
-                                    color={section.color} 
-                                    className="size-4 shrink-0" 
-                                />
-                                )}
-                              <span>{project.name}</span>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        );
-                      })}
-                    </SidebarMenuSub>
-                  </SidebarCollapsibleContent>
-                  
-                </SidebarCollapsible>
-              </SidebarMenuItem>
-            ))}
 
-          </SidebarMenu>
-
-        </SidebarGroupContent>
-      </SidebarGroup>
+                        {/* ISI FOLDER (DAFTAR PROJECT) */}
+                        <SidebarCollapsibleContent>
+                            <SidebarMenuSub>
+                            {section.items.map((project) => {
+                                const href = `/projects/${project.slug}`;
+                                return (
+                                <SidebarMenuSubItem key={project.id}>
+                                    <SidebarMenuSubButton
+                                    as={Link}
+                                    href={href}
+                                    isActive={pathname === href}
+                                    >
+                                    {section.color && (
+                                        <FolderIcon color={section.color} className="size-4 shrink-0" />
+                                    )}
+                                    <span>{project.name}</span>
+                                    </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                                );
+                            })}
+                            </SidebarMenuSub>
+                        </SidebarCollapsibleContent>
+                        </SidebarCollapsible>
+                    </SidebarMenuItem>
+                  );
+                })}
+            </SidebarMenu>
+            </SidebarGroupContent>
+        </SidebarGroup>
+        </>
+      )}
     </SidebarContent>
   );
 }
@@ -153,21 +231,28 @@ function NavContent({
 function ActiveNavContent({
   projects,
   groups,
+  accounts,
 }: {
   projects: SidebarProject[];
   groups: SidebarGroupData[];
+  accounts: string[];
 }) {
   const pathname = usePathname();
-  return <NavContent projects={projects} groups={groups} pathname={pathname} />;
+  return (
+    <NavContent projects={projects} groups={groups} accounts={accounts} pathname={pathname} />
+  );
 }
 
 export function AppSidebar({
+  accounts,
   projects,
   groups,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
+  accounts: string[];
   projects: SidebarProject[];
   groups: SidebarGroupData[];
+  
 }) {
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -189,7 +274,7 @@ export function AppSidebar({
                 <span className="truncate text-xs text-muted">DIGIMON</span>
               </div>
             </SidebarMenuButton>
-            
+
             {/* Posisikan Trigger di luar SidebarMenuButton (Link) */}
             <SidebarTrigger />
           </SidebarMenuItem>
@@ -197,9 +282,11 @@ export function AppSidebar({
       </SidebarHeader>
 
       <Suspense
-        fallback={<NavContent projects={projects} groups={groups} pathname={null} />}
+        fallback={
+          <NavContent accounts={accounts} projects={projects} groups={groups} pathname={null} />
+        }
       >
-        <ActiveNavContent projects={projects} groups={groups} />
+        <ActiveNavContent  accounts={accounts} projects={projects} groups={groups} />
       </Suspense>
 
       <SidebarRail />

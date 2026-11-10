@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarInset } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
 import { getProjectGroups, getProjects } from "@/lib/queries";
+import { getAccountOptions } from "@/lib/pilar-queries";
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -15,8 +16,12 @@ export const metadata: Metadata = {
 };
 
 async function SidebarLoader() {
-  const [projects, groups] = await Promise.all([getProjects(), getProjectGroups()]);
-  return <AppSidebar projects={projects} groups={groups} />;
+  const [projects, groups, accounts] = await Promise.all([
+    getProjects(),
+    getProjectGroups(),
+    getAccountOptions(),
+  ]);
+  return <AppSidebar accounts={accounts} projects={projects} groups={groups}  />;
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -32,7 +37,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <SidebarProvider>
-            <Suspense fallback={<AppSidebar projects={[]} groups={[]} />}>
+             <Suspense fallback={<AppSidebar projects={[]} groups={[]} accounts={[]} />}>
               <SidebarLoader />
             </Suspense>
             <SidebarInset>

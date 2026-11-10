@@ -77,7 +77,7 @@ const periode = isPeriode(periodeRaw) ? periodeRaw : null;
            (name, description, slug, group_id, pilar, jenis, tema, akun, keyword, hook, cta,
             prod_date, editor_date, selesai_date, upload_date, pic_id, status, periode)
          values ($1, $2, $3, $4::uuid, $5, $6, $7, $8, $9, $10, $11,
-                 $12::date, $13::date, $14::date, $15::date, $16::uuid, $17)
+                 $12::date, $13::date, $14::date, $15::date, $16::uuid, $17),
                  coalesce($18::text, to_char(now() at time zone 'Asia/Jakarta', 'YYYY-MM')))
          on conflict (slug) do nothing returning id`,
         [

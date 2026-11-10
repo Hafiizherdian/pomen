@@ -129,10 +129,10 @@ export function GroupProgressList({ groups }: { groups: GroupProgress[] }) {
               key={group.id}
               type="button"
               onClick={() => setOpenId(group.id)}
-              className="flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-default"
+              className="flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-default cursor-pointer"
             >
               <FolderIcon color={group.color} className="w-14 shrink-0" />
-              <div className="min-w-0 flex-1 space-y-2">
+              <div className="min-w-0 flex-1 space-y-2 cursor-pointer">
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <span className="truncate font-medium">{group.name}</span>
                   <span className="shrink-0 text-muted tabular-nums">

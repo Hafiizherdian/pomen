@@ -5,8 +5,8 @@ import type { Column, Profile, Project, ProjectGroup, ProjectStats, ProjectRow, 
 
 export async function getProjects() {
   await connection();
-  const { rows } = await pool.query<Project>(
-    "select id, name, description, slug, group_id, created_at from projects order by created_at",
+  const { rows } = await pool.query<Project & { akun: string | null }>(
+    "select id, name, description, slug, group_id, akun, created_at from projects order by created_at",
   );
   return rows;
 }
