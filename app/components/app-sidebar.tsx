@@ -71,8 +71,7 @@ function NavContent({
     },
   ].filter((section) => section.items.length > 0);
 
-  // Satu bagian per akun: urutan dari halaman Pilar Konten, lalu akun lain yang
-  // ada di data project, lalu project tanpa akun.
+  // Satu bagian per akun: urutan dari halaman Pilar Konten, lalu akun lain yang ada di data project, lalu project tanpa akun.
   const groupColor = new Map(groups.map((g) => [g.id, g.color]));
   const extraAkun = [...new Set(projects.map((p) => p.akun?.trim() ?? "").filter(Boolean))]
     .filter((name) => !accounts.includes(name))
@@ -87,7 +86,7 @@ function NavContent({
 
   return (
     <SidebarContent>
-      {/* --- MENU UTAMA --- */}
+      {/* MENU UTAMA */}
       <SidebarGroup>
         <SidebarGroupLabel>Menu</SidebarGroupLabel>
         <SidebarGroupContent>
@@ -109,7 +108,7 @@ function NavContent({
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {/* --- MENU AKUN (BISA DI-COLLAPSE PER AKUN) --- */}
+      {/* MENU AKUN */}
       {akunSections.length > 0 && (
         <>
           <SidebarSeparator />
@@ -165,10 +164,9 @@ function NavContent({
 
       <SidebarSeparator />
 
-        {/* --- MENU PROJECT (BISA DI-COLLAPSE PER FOLDER) --- */}
-        {/* --- MENU PROJECT (BISA DI-COLLAPSE PER FOLDER) --- */}
+        {/* MENU PROJECT */}
         <SidebarGroup>
-            <SidebarGroupLabel>Project</SidebarGroupLabel>
+            <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarGroupContent>
             <SidebarMenu>
                 {sections.map((section) => {
