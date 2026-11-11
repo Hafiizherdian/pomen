@@ -9,6 +9,7 @@ import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
 import { getProjectGroups, getProjects } from "@/lib/queries";
 import { getAccountOptions } from "@/lib/pilar-queries";
+import { LiveRefresh } from "@/app/components/live-refresh";
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -41,6 +42,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarLoader />
             </Suspense>
             <SidebarInset>
+                <LiveRefresh interval={10000} />
               <header className="flex h-12 items-center gap-2 px-4">
                 <ThemeToggle className="ml-auto" />
               </header>
