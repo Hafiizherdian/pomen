@@ -11,7 +11,7 @@ export default function Home() {
     <div className="flex-1 space-y-6 p-6">
       <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted">Ringkasan semua project</p>
+        <p className="text-sm text-muted">Ringkasan semua konten</p>
       </div>
       <Suspense fallback={<p className="text-sm text-muted">Memuat...</p>}>
         <Overview />
@@ -21,26 +21,26 @@ export default function Home() {
 }
 
 function toItems(list: ProjectStats[]) {
-  return list.map(({ id, name, slug, total, done, overdue }) => ({
+  return list.map(({ id, name, slug, status, is_done, overdue }) => ({
     id,
     name,
     slug,
-    total,
-    done,
+    status,
+    is_done,
     overdue,
   }));
 }
 
 async function Overview() {
   const [projects, groups] = await Promise.all([getProjectStats(), getProjectGroups()]);
-  const total = projects.reduce((n, p) => n + p.total, 0);
-  const done = projects.reduce((n, p) => n + p.done, 0);
-  const overdue = projects.reduce((n, p) => n + p.overdue, 0);
+  const total = projects.length;
+  const done = projects.filter((p) => p.is_done).length;
+  const overdue = projects.filter((p) => p.overdue).length;
 
   const stats = [
-    { label: "Project", value: projects.length },
-    { label: "Total task", value: total },
+    { label: "Total konten", value: total },
     { label: "Selesai", value: done },
+    { label: "Belum selesai", value: total - done },
     { label: "Lewat tenggat", value: overdue },
   ];
 
@@ -56,7 +56,7 @@ async function Overview() {
       ? [
           {
             id: "none",
-            name: groups.length > 0 ? "Tanpa group" : "Semua project",
+            name: groups.length > 0 ? "Tanpa group" : "Semua konten",
             color: UNGROUPED_COLOR,
             projects: toItems(ungrouped),
           },
@@ -76,12 +76,12 @@ async function Overview() {
       </div>
 
       <div className="space-y-3">
-        <h2 className="text-sm font-medium">Progres project</h2>
+        <h2 className="text-sm font-medium">Progres konten</h2>
         {progress.length === 0 ? (
           <p className="text-sm text-muted">
-            Belum ada project.{" "}
+            Belum ada konten.{" "}
             <Link href="/projects" className="underline">
-              Buat project
+              Buat konten
             </Link>
           </p>
         ) : (

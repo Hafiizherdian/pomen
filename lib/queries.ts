@@ -22,14 +22,12 @@ export async function getProjectGroups() {
 export async function getProjectStats() {
   await connection();
   const { rows } = await pool.query<ProjectStats>(`
-    select p.id, p.name, p.description, p.slug, p.group_id, p.created_at,
-           count(t.id)::int as total,
-           count(t.id) filter (where t.is_done)::int as done,
-           count(t.id) filter (where not t.is_done and t.due_date < current_date)::int as overdue
+    select p.id, p.name, p.slug, p.group_id, p.akun, p.status, p.periode, p.upload_date,
+           coalesce(o.is_final, false) as is_done,
+           (not coalesce(o.is_final, false)
+             and p.upload_date < (now() at time zone 'Asia/Jakarta')::date) as overdue
     from projects p
-    left join columns c on c.project_id = p.id
-    left join tasks t on t.column_id = c.id
-    group by p.id
+    left join master_options o on o.kind = 'status' and o.value = p.status
     order by p.created_at
   `);
   return rows;

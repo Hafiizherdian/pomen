@@ -2,17 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { FolderIcon } from "@/app/components/ui/folder-icon";
+import { cn } from "@/lib/utils";
 
 export type ProgressProject = {
   id: string;
   name: string;
   slug: string;
-  total: number;
-  done: number;
-  overdue: number;
+  status: string;
+  is_done: boolean;
+  overdue: boolean;
 };
 
 export type GroupProgress = {
@@ -23,9 +24,9 @@ export type GroupProgress = {
 };
 
 function summarize(projects: ProgressProject[]) {
-  const total = projects.reduce((n, p) => n + p.total, 0);
-  const done = projects.reduce((n, p) => n + p.done, 0);
-  const overdue = projects.reduce((n, p) => n + p.overdue, 0);
+  const total = projects.length;
+  const done = projects.filter((p) => p.is_done).length;
+  const overdue = projects.filter((p) => p.overdue).length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   return { total, done, overdue, pct };
 }
@@ -59,7 +60,7 @@ function GroupModal({ group, onClose }: { group: GroupProgress; onClose: () => v
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={`Project di ${group.name}`}
+        aria-label={`Konten di ${group.name}`}
         className="w-full max-w-lg rounded-xl border border-border bg-surface p-5 shadow-xl"
       >
         <div className="flex items-start gap-3">
@@ -67,8 +68,7 @@ function GroupModal({ group, onClose }: { group: GroupProgress; onClose: () => v
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-lg font-semibold">{group.name}</h2>
             <p className="text-sm text-muted tabular-nums">
-              {group.projects.length} project · {summary.done}/{summary.total} task selesai (
-              {summary.pct}%)
+              {summary.done}/{summary.total} konten selesai ({summary.pct}%)
             </p>
           </div>
           <button
@@ -84,31 +84,31 @@ function GroupModal({ group, onClose }: { group: GroupProgress; onClose: () => v
 
         <div className="mt-4 max-h-[60vh] space-y-2 overflow-y-auto">
           {group.projects.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted">Belum ada project di group ini.</p>
+            <p className="py-6 text-center text-sm text-muted">Belum ada konten di group ini.</p>
           )}
-          {group.projects.map((project) => {
-            const pct = project.total ? Math.round((project.done / project.total) * 100) : 0;
-            return (
-              <Link
-                key={project.id}
-                href={`/projects/${project.slug}`}
-                className="block space-y-2 rounded-lg border border-border p-3 transition-colors hover:bg-default"
-              >
-                <div className="flex items-center justify-between gap-2 text-sm">
-                  <span className="truncate font-medium">{project.name}</span>
-                  <span className="shrink-0 text-muted tabular-nums">
-                    {project.done}/{project.total} selesai
-                  </span>
-                </div>
-                <ProgressBar pct={pct} />
-                {project.overdue > 0 && (
-                  <p className="text-xs text-danger tabular-nums">
-                    {project.overdue} lewat tenggat
-                  </p>
+          {group.projects.map((project) => (
+            <Link
+              key={project.id}
+              href={`/projects/${project.slug}`}
+              className="flex items-center gap-3 rounded-lg border border-border p-3 text-sm transition-colors hover:bg-default"
+            >
+              <span
+                className={cn(
+                  "flex size-5 shrink-0 items-center justify-center rounded-full border",
+                  project.is_done
+                    ? "border-accent bg-accent text-accent-foreground"
+                    : "border-border text-transparent",
                 )}
-              </Link>
-            );
-          })}
+              >
+                <Check className="size-3" />
+              </span>
+              <span className="min-w-0 flex-1 truncate font-medium">{project.name}</span>
+              {project.overdue && <span className="shrink-0 text-xs text-danger">Lewat tenggat</span>}
+              <span className="shrink-0 rounded-full bg-default px-2 py-0.5 text-xs text-muted">
+                {project.status}
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </div>
@@ -129,19 +129,19 @@ export function GroupProgressList({ groups }: { groups: GroupProgress[] }) {
               key={group.id}
               type="button"
               onClick={() => setOpenId(group.id)}
-              className="flex w-full items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-default cursor-pointer"
+              className="flex w-full cursor-pointer items-center gap-4 rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-default"
             >
               <FolderIcon color={group.color} className="w-14 shrink-0" />
-              <div className="min-w-0 flex-1 space-y-2 cursor-pointer">
+              <div className="min-w-0 flex-1 space-y-2">
                 <div className="flex items-center justify-between gap-2 text-sm">
                   <span className="truncate font-medium">{group.name}</span>
-                  <span className="shrink-0 text-muted tabular-nums">
+                  <span className="shrink-0 tabular-nums text-muted">
                     {summary.done}/{summary.total} selesai
                   </span>
                 </div>
                 <ProgressBar pct={summary.pct} />
-                <p className="text-xs text-muted tabular-nums">
-                  {group.projects.length} project
+                <p className="text-xs tabular-nums text-muted">
+                  {summary.total} konten
                   {summary.overdue > 0 && ` · ${summary.overdue} lewat tenggat`}
                 </p>
               </div>

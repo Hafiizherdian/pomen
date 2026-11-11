@@ -14,10 +14,19 @@ export interface ProjectGroup {
   position: number;
 }
 
-export interface ProjectStats extends Project {
-  total: number;
-  done: number;
-  overdue: number;
+export interface ProjectStats {
+  id: string;
+  name: string;
+  slug: string;
+  group_id: string | null;
+  akun: string | null;
+  status: string;
+  periode: string | null;
+  upload_date: string | null;
+  /** Status konten ini ditandai "Dihitung selesai" di Admin > Data status & jenis. */
+  is_done: boolean;
+  /** Belum selesai dan Tgl Upload sudah lewat. */
+  overdue: boolean;
 }
 
 export interface Profile {
