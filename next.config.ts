@@ -1,9 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    serverActions: {
+      allowedOrigins: [
+        "localhost:3000",
+        "*.devtunnels.ms",
+      ],
+    },
+  },
+  allowedDevOrigins: ["*.devtunnels.ms"],
   turbopack: {
     rules: {
       "*.css": {
