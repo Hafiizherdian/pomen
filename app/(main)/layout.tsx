@@ -4,12 +4,15 @@ import "../globals.css";
 import { ThemeProvider } from "@/app/components/theme/theme-provider";
 import { ThemeScript } from "@/app/components/theme/theme-script";
 import { ThemeToggle } from "@/app/components/theme/theme-toggle";
-import { SidebarProvider, SidebarInset } from "@/app/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
 import { getProjectGroups, getProjects } from "@/lib/queries";
 import { getAccountOptions } from "@/lib/pilar-queries";
-import { LiveRefresh } from "@/app/components/live-refresh";
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -22,7 +25,7 @@ async function SidebarLoader() {
     getProjectGroups(),
     getAccountOptions(),
   ]);
-  return <AppSidebar accounts={accounts} projects={projects} groups={groups}  />;
+  return <AppSidebar accounts={accounts} projects={projects} groups={groups} />;
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -38,12 +41,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <SidebarProvider>
-             <Suspense fallback={<AppSidebar projects={[]} groups={[]} accounts={[]} />}>
+            <Suspense fallback={<AppSidebar projects={[]} groups={[]} accounts={[]} />}>
               <SidebarLoader />
             </Suspense>
             <SidebarInset>
-                <LiveRefresh interval={10000} />
               <header className="flex h-12 items-center gap-2 px-4">
+                <SidebarTrigger className="md:hidden" />
                 <ThemeToggle className="ml-auto" />
               </header>
               {children}

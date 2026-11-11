@@ -256,9 +256,13 @@ export function AppSidebar({
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
-          <SidebarMenuItem className="flex items-center gap-2">
-            {/* Link dipisah dari Trigger */}
-            <SidebarMenuButton as={Link} href="/" size="lg" className="flex-1">
+          <SidebarMenuItem className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col">
+            <SidebarMenuButton
+              as={Link}
+              href="/"
+              size="lg"
+              className="flex-1 group-data-[collapsible=icon]:flex-none"
+            >
               <Image
                 src="/logo-cgkn.png"
                 alt="Logo CGKN"
@@ -273,7 +277,6 @@ export function AppSidebar({
               </div>
             </SidebarMenuButton>
 
-            {/* Posisikan Trigger di luar SidebarMenuButton (Link) */}
             <SidebarTrigger />
           </SidebarMenuItem>
         </SidebarMenu>
