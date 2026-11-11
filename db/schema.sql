@@ -150,8 +150,20 @@ update projects
 set periode = to_char(coalesce(prod_date, (created_at at time zone 'Asia/Jakarta')::date), 'YYYY-MM')
 where periode is null;
 
-create index if not exists projects_periode_idx on projects(periode);
+create table if not exists import_logs (
+  id uuid primary key default gen_random_uuid(),
+  file_name text not null,
+  sheet_name text,
+  periode text,
+  group_id uuid references project_groups(id) on delete set null,
+  total_rows int not null default 0,
+  inserted int not null default 0,
+  skipped int not null default 0,
+  created_at timestamptz not null default now()
+);
 
+create index if not exists import_logs_created_idx on import_logs(created_at desc);
+create index if not exists projects_periode_idx on projects(periode);
 create index if not exists projects_group_idx on projects(group_id);
 create index if not exists pilar_rows_kind_idx on pilar_rows(kind, position);
 create index if not exists columns_project_idx on columns(project_id, position);

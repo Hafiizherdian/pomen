@@ -86,4 +86,16 @@ export interface ImportSummary {
   newStatus: string[];
 }
 
+export interface ImportLogRow {
+  id: string;
+  file_name: string;
+  sheet_name: string | null;
+  periode: string | null;
+  group_name: string | null;
+  total_rows: number;
+  inserted: number;
+  skipped: number;
+  created_at: string;
+}
+
 export type ImportResult = { ok: true; data: ImportSummary } | { ok: false; error: string };

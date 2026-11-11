@@ -109,11 +109,18 @@ export function ProjectImporter({
     }
   }
 
-  function handleImport() {
+    function handleImport() {
     if (!parsed) return;
     setError(null);
     startTransition(async () => {
-      const res = await importProjects({ rows: parsed.rows, periode, groupId, skipExisting });
+      const res = await importProjects({
+        rows: parsed.rows,
+        periode,
+        groupId,
+        skipExisting,
+        fileName,
+        sheetName: sheet,
+      });
       if (res.ok) {
         setResult(res.data);
         setParsed(null);

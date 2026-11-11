@@ -9,6 +9,7 @@ import type {
   OptionRow,
   Report,
   ReportRange,
+  ImportLogRow,
 } from "@/lib/admin-types";
 
 /* Ringkasan */
@@ -53,6 +54,23 @@ export async function getOptionsWithUsage(): Promise<OptionRow[]> {
     from master_options o
     order by o.kind, o.position, o.created_at, o.id
   `);
+  return rows;
+}
+
+/* Riwayat impor */
+
+export async function getImportLogs(limit = 20): Promise<ImportLogRow[]> {
+  await connection();
+  const { rows } = await pool.query<ImportLogRow>(
+    `select l.id, l.file_name, l.sheet_name, l.periode, l.total_rows,
+            l.inserted, l.skipped, l.created_at,
+            g.name as group_name
+     from import_logs l
+     left join project_groups g on g.id = l.group_id
+     order by l.created_at desc
+     limit $1`,
+    [limit],
+  );
   return rows;
 }
 

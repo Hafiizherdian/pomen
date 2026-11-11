@@ -51,6 +51,8 @@ export async function importProjects(input: {
   periode: string;
   groupId: string;
   skipExisting: boolean;
+  fileName: string;
+  sheetName: string;
 }): Promise<ImportResult> {
   return guardWith(async () => {
     if (!isPeriode(input.periode)) throw new UserError("Bulan tidak valid");
@@ -149,7 +151,7 @@ export async function importProjects(input: {
           );
           projectId = res.rows[0]?.id ?? null;
         }
-        if (!projectId) throw new UserError(`Gagal membuat slug unik untuk baris ${row.line}`);
+               if (!projectId) throw new UserError(`Gagal membuat slug unik untuk baris ${row.line}`);
 
         await client.query(
           `insert into columns (project_id, name, position)
@@ -158,6 +160,22 @@ export async function importProjects(input: {
         );
         inserted++;
       }
+
+      // Catat riwayat impor (di luar loop, sekali per impor).
+      await client.query(
+        `insert into import_logs
+           (file_name, sheet_name, periode, group_id, total_rows, inserted, skipped)
+         values ($1, $2, $3, $4::uuid, $5, $6, $7)`,
+        [
+          String(input.fileName ?? "").trim().slice(0, 200) || "(tanpa nama)",
+          String(input.sheetName ?? "").trim().slice(0, 100) || null,
+          input.periode,
+          groupId,
+          plan.rows.length,
+          inserted,
+          skipped,
+        ],
+      );
 
       return {
         inserted,
