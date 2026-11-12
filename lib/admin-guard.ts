@@ -1,16 +1,18 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { assertAdmin } from "@/lib/admin-auth";
+import { assertRole } from "@/lib/admin-auth";
+import type { Role } from "@/lib/roles";
 
 /** Error yang pesannya aman ditampilkan ke admin. */
 export class UserError extends Error {}
 
-/** Seperti guard di admin-actions, tapi mengembalikan data hasil. */
+/** Seperti guard di admin-actions, tapi mengembalikan data hasil. `min` = peran minimal. */
 export async function guardWith<T>(
   fn: () => Promise<T>,
+  min: Role = "admin",
 ): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
   try {
-    await assertAdmin();
+    await assertRole(min);
     const data = await fn();
     revalidatePath("/", "layout");
     return { ok: true, data };

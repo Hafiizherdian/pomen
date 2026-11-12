@@ -162,6 +162,12 @@ create table if not exists import_logs (
   created_at timestamptz not null default now()
 );
 
+alter table profiles
+  add column if not exists role text not null default 'user'
+    check (role in ('root', 'admin', 'user')),
+  add column if not exists password_hash text,
+  add column if not exists is_active boolean not null default true;
+
 create index if not exists import_logs_created_idx on import_logs(created_at desc);
 create index if not exists projects_periode_idx on projects(periode);
 create index if not exists projects_group_idx on projects(group_id);

@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -10,11 +11,13 @@ import {
   LayoutDashboard,
   LayoutList,
   LogOut,
+  ShieldCheck,
   Upload,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 
-import { logoutAdmin } from "@/app/admin-actions";
+import { logout } from "@/app/auth-actions";
 import {
   Sidebar,
   SidebarContent,
@@ -30,26 +33,40 @@ import {
   SidebarSeparator,
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
-import Image from "next/image";
+import { roleAtLeast, type Role } from "@/lib/roles";
 
-const items = [
+type NavItem = {
+  href: string;
+  title: string;
+  icon: LucideIcon;
+  exact?: boolean;
+  /** Peran minimal untuk melihat menu ini. Kosong = semua admin. */
+  minRole?: Role;
+};
+
+const items: NavItem[] = [
   { href: "/admin", title: "Ringkasan", icon: LayoutDashboard, exact: true },
   { href: "/admin/anggota", title: "Anggota Tim", icon: Users },
   { href: "/admin/master-data", title: "Data status & jenis", icon: Layers },
   { href: "/admin/group", title: "Group", icon: FolderKanban },
   { href: "/admin/impor", title: "Impor data", icon: Upload },
   { href: "/admin/laporan", title: "Laporan", icon: LayoutList },
+  { href: "/admin/akun", title: "Akun & peran", icon: ShieldCheck, minRole: "root" },
 ];
 
 /** `pathname` null = belum diketahui (tidak ada item yang aktif). */
-function NavContent({ pathname }: { pathname: string | null }) {
+function NavContent({ pathname, role }: { pathname: string | null; role: Role | null }) {
+  const visible = items.filter(
+    (item) => !item.minRole || (role !== null && roleAtLeast(role, item.minRole)),
+  );
+
   return (
     <SidebarContent>
       <SidebarGroup>
         <SidebarGroupLabel>Atur en wes sak enakmu gi</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
-            {items.map((item) => {
+            {visible.map((item) => {
               const active =
                 pathname !== null &&
                 (item.exact
@@ -77,44 +94,49 @@ function NavContent({ pathname }: { pathname: string | null }) {
 }
 
 /** Satu-satunya tempat yang memakai usePathname(), jadi harus dibungkus Suspense. */
-function ActiveNavContent() {
+function ActiveNavContent({ role }: { role: Role | null }) {
   const pathname = usePathname();
-  return <NavContent pathname={pathname} />;
+  return <NavContent pathname={pathname} role={role} />;
 }
 
-export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
+// `role` di sini peran user, bukan atribut HTML `role`, jadi atribut bawaannya dibuang dulu.
+type AdminSidebarProps = Omit<React.ComponentProps<typeof Sidebar>, "role"> & {
+  role: Role | null;
+};
+
+export function AdminSidebar({ role, ...props }: AdminSidebarProps) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-  <SidebarMenu>
-    <SidebarMenuItem className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col">
-      <SidebarMenuButton
-        as={Link}
-        href="/admin"
-        size="lg"
-        className="flex-1 group-data-[collapsible=icon]:flex-none"
-      >
-        <Image
-          src="/logo-cgkn.png"
-          alt="Logo CGKN"
-          width={32}
-          height={32}
-          priority
-          className="size-8 shrink-0 rounded-md object-contain"
-        />
-        <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-          <span className="truncate text-sm font-semibold">Admin</span>
-          <span className="truncate text-xs text-muted">CGKN DIGIMAR</span>
-        </div>
-      </SidebarMenuButton>
+        <SidebarMenu>
+          <SidebarMenuItem className="flex items-center gap-2 group-data-[collapsible=icon]:flex-col">
+            <SidebarMenuButton
+              as={Link}
+              href="/admin"
+              size="lg"
+              className="flex-1 group-data-[collapsible=icon]:flex-none"
+            >
+              <Image
+                src="/logo-cgkn.png"
+                alt="Logo CGKN"
+                width={32}
+                height={32}
+                priority
+                className="size-8 shrink-0 rounded-md object-contain"
+              />
+              <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate text-sm font-semibold">Admin</span>
+                <span className="truncate text-xs text-muted">CGKN DIGIMAR</span>
+              </div>
+            </SidebarMenuButton>
 
-      <SidebarTrigger />
-    </SidebarMenuItem>
-  </SidebarMenu>
-</SidebarHeader>
+            <SidebarTrigger />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      <Suspense fallback={<NavContent pathname={null} />}>
-        <ActiveNavContent />
+      <Suspense fallback={<NavContent pathname={null} role={role} />}>
+        <ActiveNavContent role={role} />
       </Suspense>
 
       <SidebarSeparator />
@@ -127,7 +149,7 @@ export function AdminSidebar(props: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-        <form action={logoutAdmin}>
+        <form action={logout}>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton type="submit" tooltip="Keluar">

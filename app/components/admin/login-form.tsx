@@ -1,25 +1,35 @@
 "use client";
 
 import { useActionState } from "react";
-import { loginAdmin } from "@/app/admin-actions";
+import { login } from "@/app/auth-actions";
 import { inputClass } from "@/app/components/admin/admin-ui";
 import type { LoginState } from "@/lib/admin-types";
 
-export function LoginForm() {
-  const [state, action, pending] = useActionState<LoginState, FormData>(loginAdmin, undefined);
+export function LoginForm({ next }: { next: string }) {
+  const [state, action, pending] = useActionState<LoginState, FormData>(login, undefined);
 
   return (
-    <form
-      action={action}
-      className="w-full space-y-4 rounded-xl border border-border bg-surface p-5"
-    >
+    <form action={action} className="w-full space-y-4 rounded-xl border border-border bg-surface p-5">
+      <input type="hidden" name="next" value={next} />
+
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Password admin</span>
+        <span className="font-medium">Email</span>
+        <input
+          type="email"
+          name="email"
+          required
+          autoFocus
+          autoComplete="username"
+          className={inputClass}
+        />
+      </label>
+
+      <label className="block space-y-1 text-sm">
+        <span className="font-medium">Password</span>
         <input
           type="password"
           name="password"
           required
-          autoFocus
           autoComplete="current-password"
           className={inputClass}
         />

@@ -1,14 +1,23 @@
+import { Suspense } from "react";
+
 import { AdminSidebar } from "@/app/components/admin/admin-sidebar";
 import { ThemeToggle } from "@/app/components/theme/theme-toggle";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/app/components/ui/sidebar";
+import { requireRole } from "@/lib/admin-auth";
+
+async function SidebarLoader() {
+  const user = await requireRole("admin");
+  return <AdminSidebar role={user.role} />;
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
-      <AdminSidebar />
+      <Suspense fallback={<AdminSidebar role={null} />}>
+        <SidebarLoader />
+      </Suspense>
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 px-4">
-          {/* Di mobile sidebar berupa drawer, jadi tombol bukanya ada di sini. */}
           <SidebarTrigger className="md:hidden" />
           <ThemeToggle className="ml-auto" />
         </header>

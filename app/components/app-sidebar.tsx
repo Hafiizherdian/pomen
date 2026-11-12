@@ -4,14 +4,16 @@ import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { AtSign, Home, LayoutList, Layers } from "lucide-react";
+import { AtSign, Home, LayoutList, Layers, LogOut, ShieldCheck } from "lucide-react";
 
+import { logout } from "@/app/auth-actions";
 import {
   Sidebar,
   SidebarCollapsible,
   SidebarCollapsibleContent,
   SidebarCollapsibleTrigger,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -27,6 +29,7 @@ import {
   SidebarTrigger,
 } from "@/app/components/ui/sidebar";
 import { FolderIcon } from "@/app/components/ui/folder-icon";
+import { ROLE_LABEL, roleAtLeast, type Role } from "@/lib/roles";
 
 type SidebarProject = {
   id: string;
@@ -36,6 +39,7 @@ type SidebarProject = {
   akun: string | null;
 };
 type SidebarGroupData = { id: string; name: string; color: string };
+type SidebarUser = { name: string; role: Role };
 
 const mainNav = [
   { title: "Dashboard", href: "/", icon: Home },
@@ -108,11 +112,11 @@ function NavContent({
         </SidebarGroupContent>
       </SidebarGroup>
 
-      {/* MENU AKUN */}
       {akunSections.length > 0 && (
         <>
           <SidebarSeparator />
 
+          {/* MENU AKUN */}
           <SidebarGroup>
             <SidebarGroupLabel>Akun</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -162,63 +166,67 @@ function NavContent({
             </SidebarGroupContent>
           </SidebarGroup>
 
-      <SidebarSeparator />
+          <SidebarSeparator />
 
-        {/* MENU PROJECT */}
-        <SidebarGroup>
+          {/* MENU PROJECT */}
+          <SidebarGroup>
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarGroupContent>
-            <SidebarMenu>
+              <SidebarMenu>
                 {sections.map((section) => {
-                  // Tambahkan pengecekan apakah ada project aktif di dalam folder ini
+                  // Folder terbuka otomatis jika berisi project yang sedang dibuka.
                   const hasActive = section.items.some(
-                    (p) => pathname === `/projects/${p.slug}`
+                    (p) => pathname === `/projects/${p.slug}`,
                   );
 
                   return (
                     <SidebarMenuItem key={section.id ?? "none"}>
-                        {/* Ubah defaultOpen menjadi defaultOpen={hasActive} */}
-                        <SidebarCollapsible defaultOpen={hasActive}>
-                        
+                      <SidebarCollapsible defaultOpen={hasActive}>
                         {/* TRIGGER (TOMBOL FOLDER) */}
                         {section.name && (
-                            <SidebarMenuButton as={SidebarCollapsibleTrigger} className="font-medium">
+                          <SidebarMenuButton
+                            as={SidebarCollapsibleTrigger}
+                            className="font-medium"
+                          >
                             {section.color && (
-                                <FolderIcon color={section.color} className="size-4 shrink-0" />
+                              <FolderIcon color={section.color} className="size-4 shrink-0" />
                             )}
                             <span>{section.name}</span>
-                            </SidebarMenuButton>
+                          </SidebarMenuButton>
                         )}
 
                         {/* ISI FOLDER (DAFTAR PROJECT) */}
                         <SidebarCollapsibleContent>
-                            <SidebarMenuSub>
+                          <SidebarMenuSub>
                             {section.items.map((project) => {
-                                const href = `/projects/${project.slug}`;
-                                return (
+                              const href = `/projects/${project.slug}`;
+                              return (
                                 <SidebarMenuSubItem key={project.id}>
-                                    <SidebarMenuSubButton
+                                  <SidebarMenuSubButton
                                     as={Link}
                                     href={href}
                                     isActive={pathname === href}
-                                    >
+                                  >
                                     {section.color && (
-                                        <FolderIcon color={section.color} className="size-4 shrink-0" />
+                                      <FolderIcon
+                                        color={section.color}
+                                        className="size-4 shrink-0"
+                                      />
                                     )}
                                     <span>{project.name}</span>
-                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
-                                );
+                              );
                             })}
-                            </SidebarMenuSub>
+                          </SidebarMenuSub>
                         </SidebarCollapsibleContent>
-                        </SidebarCollapsible>
+                      </SidebarCollapsible>
                     </SidebarMenuItem>
                   );
                 })}
-            </SidebarMenu>
+              </SidebarMenu>
             </SidebarGroupContent>
-        </SidebarGroup>
+          </SidebarGroup>
         </>
       )}
     </SidebarContent>
@@ -245,12 +253,13 @@ export function AppSidebar({
   accounts,
   projects,
   groups,
+  user,
   ...props
 }: React.ComponentProps<typeof Sidebar> & {
   accounts: string[];
   projects: SidebarProject[];
   groups: SidebarGroupData[];
-  
+  user: SidebarUser | null;
 }) {
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -287,8 +296,42 @@ export function AppSidebar({
           <NavContent accounts={accounts} projects={projects} groups={groups} pathname={null} />
         }
       >
-        <ActiveNavContent  accounts={accounts} projects={projects} groups={groups} />
+        <ActiveNavContent accounts={accounts} projects={projects} groups={groups} />
       </Suspense>
+
+      {user && (
+        <>
+          <SidebarSeparator />
+          <SidebarFooter>
+            {roleAtLeast(user.role, "admin") && (
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton as={Link} href="/admin" tooltip="Admin">
+                    <ShieldCheck />
+                    <span>Admin</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            )}
+
+            <div className="px-2 text-xs group-data-[collapsible=icon]:hidden">
+              <p className="truncate font-medium">{user.name}</p>
+              <p className="text-muted">{ROLE_LABEL[user.role]}</p>
+            </div>
+
+            <form action={logout}>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton type="submit" tooltip="Keluar">
+                    <LogOut />
+                    <span>Keluar</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </form>
+          </SidebarFooter>
+        </>
+      )}
 
       <SidebarRail />
     </Sidebar>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import "../globals.css";
 import { ThemeProvider } from "@/app/components/theme/theme-provider";
 import { ThemeScript } from "@/app/components/theme/theme-script";
@@ -11,6 +12,7 @@ import {
 } from "@/app/components/ui/sidebar";
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
+import { getCurrentUser } from "@/lib/admin-auth";
 import { getProjectGroups, getProjects } from "@/lib/queries";
 import { getAccountOptions } from "@/lib/pilar-queries";
 
@@ -20,12 +22,24 @@ export const metadata: Metadata = {
 };
 
 async function SidebarLoader() {
+  // Sesi yang tidak valid lagi (akun dinonaktifkan, dihapus) dikembalikan ke login.
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
   const [projects, groups, accounts] = await Promise.all([
     getProjects(),
     getProjectGroups(),
     getAccountOptions(),
   ]);
-  return <AppSidebar accounts={accounts} projects={projects} groups={groups} />;
+
+  return (
+    <AppSidebar
+      accounts={accounts}
+      projects={projects}
+      groups={groups}
+      user={{ name: user.full_name || user.email, role: user.role }}
+    />
+  );
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +55,9 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full bg-background font-sans text-foreground">
         <ThemeProvider>
           <SidebarProvider>
-            <Suspense fallback={<AppSidebar projects={[]} groups={[]} accounts={[]} />}>
+            <Suspense
+              fallback={<AppSidebar projects={[]} groups={[]} accounts={[]} user={null} />}
+            >
               <SidebarLoader />
             </Suspense>
             <SidebarInset>

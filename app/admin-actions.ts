@@ -1,18 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import type { PoolClient } from "pg";
 import { pool, withTransaction } from "@/lib/db";
-import { assertAdmin } from "@/lib/admin-auth";
-import {
-  ADMIN_COOKIE,
-  SESSION_MAX_AGE,
-  createSessionToken,
-  passwordMatches,
-} from "@/lib/admin-token";
-import type { ActionResult, LoginState, MasterKind } from "@/lib/admin-types";
+import { assertAdmin, assertRole } from "@/lib/admin-auth";
+import type { ActionResult, MasterKind } from "@/lib/admin-types";
+import type { Role } from "@/lib/roles";
 
 /* Util */
 
@@ -64,38 +57,6 @@ async function renumber(
   );
 }
 
-/* Login */
-
-export async function loginAdmin(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  if (!process.env.ADMIN_PASSWORD) {
-    return { error: "ADMIN_PASSWORD belum diatur di environment server." };
-  }
-
-  const password = String(formData.get("password") ?? "");
-  if (!(await passwordMatches(password))) {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return { error: "Password salah." };
-  }
-
-  const store = await cookies();
-  const token = await createSessionToken();
-  store.set(ADMIN_COOKIE, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    // Set ADMIN_COOKIE_SECURE=false jika aplikasi diakses lewat HTTP (tanpa HTTPS).
-    secure: process.env.NODE_ENV === "production" && process.env.ADMIN_COOKIE_SECURE !== "false",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
-  redirect("/admin");
-}
-
-export async function logoutAdmin() {
-  const store = await cookies();
-  store.delete(ADMIN_COOKIE);
-  redirect("/admin/login");
-}
-
 /* Anggota tim */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -107,6 +68,18 @@ function cleanMember(input: { email: string; full_name: string }) {
     email,
     full_name: String(input.full_name ?? "").trim().slice(0, 100) || null,
   };
+}
+
+/** Admin hanya boleh mengurus anggota biasa; akun admin dan root hanya bisa diurus root. */
+async function assertCanManage(id: string) {
+  const me = await assertRole("admin");
+  const { rows } = await pool.query<{ role: Role }>("select role from profiles where id = $1", [
+    id,
+  ]);
+  if (rows[0] && rows[0].role !== "user" && me.role !== "root") {
+    throw new UserError("Hanya root yang bisa mengubah akun admin atau root");
+  }
+  return me;
 }
 
 export async function createMember(input: { email: string; full_name: string }) {
@@ -126,6 +99,7 @@ export async function createMember(input: { email: string; full_name: string }) 
 
 export async function updateMember(id: string, input: { email: string; full_name: string }) {
   return guard(async () => {
+    await assertCanManage(id);
     const m = cleanMember(input);
     try {
       await pool.query("update profiles set email = $2, full_name = $3 where id = $1", [
@@ -143,6 +117,8 @@ export async function updateMember(id: string, input: { email: string; full_name
 /** PIC dan penugasan task milik anggota ini menjadi kosong (ON DELETE SET NULL). */
 export async function deleteMember(id: string) {
   return guard(async () => {
+    const me = await assertCanManage(id);
+    if (me.id === id) throw new UserError("Tidak bisa menghapus akun sendiri");
     await pool.query("delete from profiles where id = $1", [id]);
   });
 }
