@@ -168,6 +168,10 @@ alter table profiles
   add column if not exists password_hash text,
   add column if not exists is_active boolean not null default true;
 
+alter table profiles add column if not exists username text;
+
+create unique index if not exists profiles_username_key on profiles (username);
+
 create index if not exists import_logs_created_idx on import_logs(created_at desc);
 create index if not exists projects_periode_idx on projects(periode);
 create index if not exists projects_group_idx on projects(group_id);

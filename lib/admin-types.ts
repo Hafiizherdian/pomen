@@ -1,6 +1,7 @@
+import type { Role } from "@/lib/roles";
+
 export type ActionResult = { ok: true } | { ok: false; error: string };
 export type LoginState = { error?: string } | undefined;
-import type { Role } from "@/lib/roles";
 
 /* Master data */
 
@@ -29,6 +30,20 @@ export interface MemberRow {
   created_at: string;
   project_count: number;
   task_count: number;
+}
+
+/* Akun */
+
+export interface AccountRow {
+  id: string;
+  email: string;
+  username: string | null;
+  full_name: string | null;
+  role: Role;
+  is_active: boolean;
+  has_password: boolean;
+  /** Punya username dan password, jadi bisa login. */
+  can_login: boolean;
 }
 
 /* Group */
@@ -97,15 +112,6 @@ export interface ImportLogRow {
   inserted: number;
   skipped: number;
   created_at: string;
-}
-
-export interface AccountRow {
-  id: string;
-  email: string;
-  full_name: string | null;
-  role: Role;
-  is_active: boolean;
-  has_password: boolean;
 }
 
 export type ImportResult = { ok: true; data: ImportSummary } | { ok: false; error: string };

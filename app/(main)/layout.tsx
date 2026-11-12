@@ -37,7 +37,7 @@ async function SidebarLoader() {
       accounts={accounts}
       projects={projects}
       groups={groups}
-      user={{ name: user.full_name || user.email, role: user.role }}
+      user={{ name: user.full_name || user.username || user.email, role: user.role }}
     />
   );
 }

@@ -8,8 +8,14 @@ import {
   resetAccountPassword,
   setAccountActive,
   setAccountRole,
+  setAccountUsername,
 } from "@/app/account-actions";
-import { StatusLine, inputClass } from "@/app/components/admin/admin-ui";
+import {
+  StatusLine,
+  blurOnEnter,
+  cellClass,
+  inputClass,
+} from "@/app/components/admin/admin-ui";
 import { useAdminAction, type RunAction } from "@/app/components/admin/use-admin-action";
 import type { AccountRow } from "@/lib/admin-types";
 import { ROLES, ROLE_LABEL, isRole, type Role } from "@/lib/roles";
@@ -77,6 +83,12 @@ function PasswordCell({ account, run }: { account: AccountRow; run: RunAction })
   );
 }
 
+function statusLabel(account: AccountRow) {
+  if (!account.has_password) return "Belum ada password";
+  if (!account.username) return "Belum ada username";
+  return account.is_active ? "Aktif" : "Nonaktif";
+}
+
 function AccountLine({
   account,
   isSelf,
@@ -90,7 +102,30 @@ function AccountLine({
     <tr className="border-b border-border align-middle last:border-b-0">
       <td className="px-4 py-2.5">
         <p className="font-medium">{account.full_name || "-"}</p>
-        {isSelf && <p className="text-xs text-muted">Akun kamu</p>}
+        {isSelf && <p className="text-xs text-muted">Akun anda</p>}
+      </td>
+      <td className="min-w-44 px-2 py-1.5">
+        <input
+          key={account.username ?? ""}
+          defaultValue={account.username ?? ""}
+          placeholder="Belum ada"
+          aria-label="Username"
+          autoCapitalize="none"
+          spellCheck={false}
+          className={cellClass}
+          onKeyDown={blurOnEnter}
+          onBlur={async (e) => {
+            const input = e.currentTarget;
+            const current = account.username ?? "";
+            const next = input.value.trim().toLowerCase();
+            if (next === current) {
+              input.value = current;
+              return;
+            }
+            const ok = await run(() => setAccountUsername(account.id, next));
+            if (!ok) input.value = current;
+          }}
+        />
       </td>
       <td className="px-4 py-2.5 text-muted">{account.email}</td>
       <td className="px-4 py-2.5">
@@ -116,11 +151,11 @@ function AccountLine({
         <label className="flex items-center gap-1.5 text-xs text-muted">
           <input
             type="checkbox"
-            checked={account.is_active && account.has_password}
-            disabled={isSelf || !account.has_password}
+            checked={account.can_login && account.is_active}
+            disabled={isSelf || !account.can_login}
             onChange={(e) => run(() => setAccountActive(account.id, e.target.checked))}
           />
-          {!account.has_password ? "Belum bisa login" : account.is_active ? "Aktif" : "Nonaktif"}
+          {statusLabel(account)}
         </label>
       </td>
       <td className="px-4 py-2.5">
@@ -139,6 +174,7 @@ export function AccountManager({
 }) {
   const { pending, error, run } = useAdminAction();
   const [form, setForm] = useState({
+    username: "",
     full_name: "",
     email: "",
     role: "user" as Role,
@@ -148,15 +184,28 @@ export function AccountManager({
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const ok = await run(() => createAccount(form));
-    if (ok) setForm({ full_name: "", email: "", role: "user", password: "" });
+    if (ok) setForm({ username: "", full_name: "", email: "", role: "user", password: "" });
   }
 
   return (
     <div className="space-y-4">
       <form
         onSubmit={handleAdd}
-        className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-[1fr_1fr_8rem_1fr_auto] sm:items-end"
+        className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_8rem_1fr_auto] lg:items-end"
       >
+        <label className="grid gap-1 text-xs font-medium text-muted">
+          <span>Username *</span>
+          <input
+            required
+            autoCapitalize="none"
+            spellCheck={false}
+            autoComplete="off"
+            value={form.username}
+            onChange={(e) => setForm({ ...form, username: e.target.value })}
+            placeholder="contoh: wowo"
+            className={inputClass}
+          />
+        </label>
         <label className="grid gap-1 text-xs font-medium text-muted">
           <span>Nama lengkap</span>
           <input
@@ -166,10 +215,9 @@ export function AccountManager({
           />
         </label>
         <label className="grid gap-1 text-xs font-medium text-muted">
-          <span>Email *</span>
+          <span>Email (opsional)</span>
           <input
             type="email"
-            required
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className={inputClass}
@@ -214,16 +262,17 @@ export function AccountManager({
       <StatusLine
         pending={pending}
         error={error}
-        hint="Kalau email sudah ada di Anggota Tim, akunnya diberi akses login dengan peran dan password ini."
+        hint="Isi email yang sama dengan anggota di Anggota Tim untuk memberinya akses login. Username bisa diedit langsung di tabel."
       />
 
       <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-        <table className="w-full min-w-[48rem] border-collapse text-sm">
+        <table className="w-full min-w-[60rem] border-collapse text-sm">
           <thead className="bg-default/60 text-left">
             <tr>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Nama</th>
+              <th className="border-b border-border px-4 py-2.5 font-semibold">Username</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Email</th>
-              <th className="border-b border-border px-4 py-2.5 font-semibold">Peran</th>
+              <th className="border-b border-border px-4 py-2.5 font-semibold">Role</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Status login</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Password</th>
             </tr>

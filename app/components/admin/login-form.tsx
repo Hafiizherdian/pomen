@@ -13,12 +13,15 @@ export function LoginForm({ next }: { next: string }) {
       <input type="hidden" name="next" value={next} />
 
       <label className="block space-y-1 text-sm">
-        <span className="font-medium">Email</span>
+        <span className="font-medium">Username</span>
         <input
-          type="email"
-          name="email"
+          type="text"
+          name="username"
           required
           autoFocus
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           autoComplete="username"
           className={inputClass}
         />

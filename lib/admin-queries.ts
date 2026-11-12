@@ -80,8 +80,9 @@ export async function getImportLogs(limit = 20): Promise<ImportLogRow[]> {
 export async function getAccounts(): Promise<AccountRow[]> {
   await connection();
   const { rows } = await pool.query<AccountRow>(`
-    select id, email, full_name, role, is_active,
-           (password_hash is not null) as has_password
+    select id, email, username, full_name, role, is_active,
+           (password_hash is not null) as has_password,
+           (password_hash is not null and username is not null) as can_login
     from profiles
     order by case role when 'root' then 0 when 'admin' then 1 else 2 end,
              full_name nulls last, email

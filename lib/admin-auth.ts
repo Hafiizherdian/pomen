@@ -9,6 +9,7 @@ import { roleAtLeast, type Role } from "@/lib/roles";
 export type CurrentUser = {
   id: string;
   email: string;
+  username: string;
   full_name: string | null;
   role: Role;
 };
@@ -20,9 +21,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!session) return null;
 
   const { rows } = await pool.query<CurrentUser>(
-    `select id, email, full_name, role
+    `select id, email, username, full_name, role
      from profiles
-     where id = $1 and is_active and password_hash is not null`,
+     where id = $1
+       and is_active
+       and password_hash is not null
+       and username is not null`,
     [session.userId],
   );
   return rows[0] ?? null;

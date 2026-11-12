@@ -51,7 +51,7 @@ const items: NavItem[] = [
   { href: "/admin/group", title: "Group", icon: FolderKanban },
   { href: "/admin/impor", title: "Impor data", icon: Upload },
   { href: "/admin/laporan", title: "Laporan", icon: LayoutList },
-  { href: "/admin/akun", title: "Akun & peran", icon: ShieldCheck, minRole: "root" },
+  { href: "/admin/akun", title: "Akun", icon: ShieldCheck, minRole: "root" },
 ];
 
 /** `pathname` null = belum diketahui (tidak ada item yang aktif). */
