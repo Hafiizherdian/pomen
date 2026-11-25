@@ -16,3 +16,17 @@ export function formatPeriode(periode: string) {
     year: "numeric",
   });
 }
+
+
+export const PERIODE_COOKIE = "pomen_periode";
+export const PERIODE_FILTER_RE = /^\d{4}(-(0[1-9]|1[0-2]))?$/;
+
+/** "" = semua periode, "2026" = satu tahun, "2026-11" = satu bulan. */
+export function parsePeriodeFilter(value: unknown): string {
+  return typeof value === "string" && PERIODE_FILTER_RE.test(value) ? value : "";
+}
+
+export function formatPeriodeFilter(value: string) {
+  if (!value) return "Semua periode";
+  return value.length === 4 ? `Tahun ${value}` : formatPeriode(value);
+}

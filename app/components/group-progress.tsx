@@ -121,7 +121,7 @@ export function GroupProgressList({ groups }: { groups: GroupProgress[] }) {
 
   return (
     <>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {groups.map((group) => {
           const summary = summarize(group.projects);
           return (

@@ -13,8 +13,10 @@ import {
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
 import { getCurrentUser } from "@/lib/admin-auth";
-import { getProjectGroups, getProjects } from "@/lib/queries";
+import { getProjectGroups, getProjects, getPeriodeYears } from "@/lib/queries";
 import { getAccountOptions } from "@/lib/pilar-queries";
+import { PeriodeFilter } from "@/app/components/periode-filter";
+import { getPeriodeFilter } from "@/lib/periode-filter";
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -26,8 +28,9 @@ async function SidebarLoader() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const periode = await getPeriodeFilter();
   const [projects, groups, accounts] = await Promise.all([
-    getProjects(),
+    getProjects(periode),
     getProjectGroups(),
     getAccountOptions(),
   ]);
@@ -40,6 +43,12 @@ async function SidebarLoader() {
       user={{ name: user.full_name || user.username || user.email, role: user.role }}
     />
   );
+}
+
+
+  async function PeriodeFilterLoader() {
+  const [value, years] = await Promise.all([getPeriodeFilter(), getPeriodeYears()]);
+  return <PeriodeFilter value={value} years={years} />;
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -63,7 +72,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <SidebarInset>
               <header className="flex h-12 items-center gap-2 px-4">
                 <SidebarTrigger className="md:hidden" />
-                <ThemeToggle className="ml-auto" />
+                <div className="ml-auto flex items-center gap-2">
+                  <Suspense fallback={<div className="h-8 w-[17rem]" />}>
+                    <PeriodeFilterLoader />
+                  </Suspense>
+                  <ThemeToggle />
+                </div>
               </header>
               {children}
             </SidebarInset>

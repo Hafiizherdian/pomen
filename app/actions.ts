@@ -6,7 +6,8 @@ import { pool, withTransaction } from "@/lib/db";
 import type { TaskInput } from "@/lib/types";
 import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 import { listOptionValues } from "@/lib/master-queries";
-import { isPeriode } from "@/lib/periode";
+import { isPeriode, PERIODE_COOKIE, parsePeriodeFilter  } from "@/lib/periode";
+import { cookies } from "next/headers";
 
 const PRIORITIES = ["low", "medium", "high"];
 
@@ -322,5 +323,20 @@ export async function updateProjectField(id: string, field: string, value: strin
   }
 
   await pool.query(`update projects set ${field} = $2${cast} where id = $1`, [id, param]);
+  refresh();
+}
+
+export async function setPeriodeFilter(value: string) {
+  const next = parsePeriodeFilter(value);
+  const store = await cookies();
+  if (next) {
+    store.set(PERIODE_COOKIE, next, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  } else {
+    store.delete(PERIODE_COOKIE);
+  }
   refresh();
 }

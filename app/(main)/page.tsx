@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { GroupProgressList, type GroupProgress } from "@/app/components/group-progress";
-import { getProjectGroups, getProjectStats } from "@/lib/queries";
+import { getDashboardCharts, getProjectGroups, getProjectStats } from "@/lib/queries";
 import type { ProjectStats } from "@/lib/types";
+import { getPeriodeFilter } from "@/lib/periode-filter";
+import { DashboardCharts } from "@/app/components/dashboard-charts";
 
 const UNGROUPED_COLOR = "#94a3b8";
 
 export default function Home() {
   return (
     <div className="flex-1 space-y-6 p-6">
-      <div>
+      {/* <div>
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <p className="text-sm text-muted">Ringkasan semua konten</p>
-      </div>
+      </div> */}
       <Suspense fallback={<p className="text-sm text-muted">Memuat...</p>}>
         <Overview />
       </Suspense>
@@ -32,7 +34,12 @@ function toItems(list: ProjectStats[]) {
 }
 
 async function Overview() {
-  const [projects, groups] = await Promise.all([getProjectStats(), getProjectGroups()]);
+  const periode = await getPeriodeFilter();
+  const [projects, groups, charts] = await Promise.all([
+    getProjectStats(periode),
+    getProjectGroups(),
+    getDashboardCharts(periode),
+  ]);
   const total = projects.length;
   const done = projects.filter((p) => p.is_done).length;
   const overdue = projects.filter((p) => p.overdue).length;
@@ -75,6 +82,8 @@ async function Overview() {
         ))}
       </div>
 
+            <DashboardCharts byJenis={charts.byJenis} byPic={charts.byPic} />
+
       <div className="space-y-3">
         <h2 className="text-sm font-medium">Progres konten</h2>
         {progress.length === 0 ? (
@@ -88,6 +97,7 @@ async function Overview() {
           <GroupProgressList groups={progress} />
         )}
       </div>
+
     </>
   );
 }

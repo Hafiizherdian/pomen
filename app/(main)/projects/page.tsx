@@ -12,19 +12,16 @@ import { ProjectTable } from "@/app/components/project/project-table";
 import { getProfiles, getProjectGroups, getProjectRows } from "@/lib/queries";
 import { getAccountOptions, getPilarOptions } from "@/lib/pilar-queries";
 import { getMasterOptions } from "@/lib/master-queries";
-import { currentPeriode, formatPeriode, isPeriode } from "@/lib/periode";
+import { currentPeriode, formatPeriodeFilter, isPeriode } from "@/lib/periode";
+import { getPeriodeFilter } from "@/lib/periode-filter";
 import { cn } from "@/lib/utils";
 
 const UNGROUPED_COLOR = "#94a3b8";
 
-type SearchParams = Promise<{ group?: string; bulan?: string }>;
+type SearchParams = Promise<{ group?: string }>;
 
-function projectsHref(group: string | null, bulan: string | null) {
-  const params = new URLSearchParams();
-  if (group) params.set("group", group);
-  if (bulan) params.set("bulan", bulan);
-  const query = params.toString();
-  return query ? `/projects?${query}` : "/projects";
+function projectsHref(group: string | null) {
+  return group ? `/projects?group=${group}` : "/projects";
 }
 
 export default function ProjectsPage({ searchParams }: { searchParams: SearchParams }) {
@@ -75,104 +72,50 @@ function FolderTile({
   );
 }
 
-function MonthChips({
-  months,
-  current,
-  group,
-}: {
-  months: string[];
-  current: string | null;
-  group: string | null;
-}) {
-  const chip = (active: boolean) =>
-    cn(
-      "rounded-full border px-3 py-1 text-sm transition-colors",
-      active
-        ? "border-accent bg-accent text-accent-foreground"
-        : "border-border text-muted hover:bg-default hover:text-foreground",
-    );
-
-  return (
-    <nav aria-label="Filter bulan" className="flex flex-wrap items-center gap-2">
-      <Link
-        href={projectsHref(group, null)}
-        aria-current={current === null ? "true" : undefined}
-        className={chip(current === null)}
-      >
-        Semua bulan
-      </Link>
-      {months.map((month) => (
-        <Link
-          key={month}
-          href={projectsHref(group, month)}
-          aria-current={current === month ? "true" : undefined}
-          className={chip(current === month)}
-        >
-          {formatPeriode(month)}
-        </Link>
-      ))}
-    </nav>
-  );
-}
-
 async function ProjectsContent({ searchParams }: { searchParams: SearchParams }) {
-  const [
-    { group: groupParam, bulan: bulanParam },
-    groups,
-    profiles,
-    pilarOptions,
-    accountOptions,
-    rows,
-    master,
-  ] = await Promise.all([
-    searchParams,
-    getProjectGroups(),
-    getProfiles(),
-    getPilarOptions(),
-    getAccountOptions(),
-    getProjectRows(),
-    getMasterOptions(),
-  ]);
+  const periode = await getPeriodeFilter();
 
-  const thisMonth = currentPeriode();
-  const bulan = isPeriode(bulanParam) ? bulanParam : null;
+  const [{ group: groupParam }, groups, profiles, pilarOptions, accountOptions, rows, master] =
+    await Promise.all([
+      searchParams,
+      getProjectGroups(),
+      getProfiles(),
+      getPilarOptions(),
+      getAccountOptions(),
+      getProjectRows(periode), // sudah difilter di query
+      getMasterOptions(),
+    ]);
 
-  // Daftar bulan: yang ada di data, bulan berjalan, dan bulan yang sedang dipilih.
-  const monthSet = new Set<string>([thisMonth]);
-  for (const row of rows) if (row.periode) monthSet.add(row.periode);
-  if (bulan) monthSet.add(bulan);
-  const months = [...monthSet].sort().reverse();
-
-  const scoped = bulan ? rows.filter((r) => r.periode === bulan) : rows;
-  const ungrouped = scoped.filter((r) => !r.group_id);
+  const ungrouped = rows.filter((r) => !r.group_id);
   const selected = groups.find((g) => g.id === groupParam) ?? null;
   const showUngrouped = groupParam === "none" && !selected;
 
   const visible = selected
-    ? scoped.filter((r) => r.group_id === selected.id)
+    ? rows.filter((r) => r.group_id === selected.id)
     : showUngrouped
       ? ungrouped
-      : scoped;
+      : rows;
+
+  // Form "Buat project" hanya bisa mengisi satu bulan, jadi pakai filter jika berupa bulan.
+  const defaultPeriode = isPeriode(periode) ? periode : currentPeriode();
 
   return (
     <>
-      <MonthChips months={months} current={bulan} group={selected?.id ?? (showUngrouped ? "none" : null)} />
-
       {/* Folder group */}
-      <div className="flex flex-wrap items-start ">
+      <div className="flex flex-wrap items-start">
         {groups.map((group) => (
           <FolderTile
             key={group.id}
-            href={projectsHref(selected?.id === group.id ? null : group.id, bulan)}
+            href={projectsHref(selected?.id === group.id ? null : group.id)}
             name={group.name}
             color={group.color}
-            count={scoped.filter((r) => r.group_id === group.id).length}
+            count={rows.filter((r) => r.group_id === group.id).length}
             selected={selected?.id === group.id}
           />
         ))}
         {groups.length > 0 && ungrouped.length > 0 && (
           <FolderTile
-            href={projectsHref(showUngrouped ? null : "none", bulan)}
+            href={projectsHref(showUngrouped ? null : "none")}
             name="Tanpa group"
             color={UNGROUPED_COLOR}
             count={ungrouped.length}
@@ -200,8 +143,7 @@ async function ProjectsContent({ searchParams }: { searchParams: SearchParams })
             </div>
           ) : (
             <h2 className="px-1 text-base font-semibold">
-              {showUngrouped ? "Tanpa group" : "Semua project"}
-              {bulan ? ` · ${formatPeriode(bulan)}` : ""}
+              {showUngrouped ? "Tanpa group" : "Semua project"} · {formatPeriodeFilter(periode)}
             </h2>
           )}
 
@@ -213,7 +155,7 @@ async function ProjectsContent({ searchParams }: { searchParams: SearchParams })
             defaultGroupId={selected?.id ?? ""}
             statusOptions={master.statuses}
             jenisOptions={master.jenis}
-            defaultPeriode={bulan ?? thisMonth}
+            defaultPeriode={defaultPeriode}
           />
         </div>
 
