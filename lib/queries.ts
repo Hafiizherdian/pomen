@@ -2,16 +2,28 @@ import "server-only";
 import { connection } from "next/server";
 import { pool } from "@/lib/db";
 import type { Column, Profile, Project, ProjectGroup, ProjectStats, ProjectRow, ProjectWithDetails, Task } from "@/lib/types";
-import type { CountRow } from "@/lib/admin-types";
+import type { CountRow, PicRow } from "@/lib/admin-types";
+import { EMPTY_FILTER, type ProjectFilter } from "@/lib/project-filter";
 
-export async function getProjects(periode = "") {
+/** Filter header. Tabel projects harus beralias `p`; parameter $1..$3 = filterParams(). */
+const FILTER_WHERE = `($1::text = '' or p.periode like $1::text || '%')
+  and ($2::text = ''
+       or ($2::text = 'none' and p.pic_id is null)
+       or p.pic_id::text = $2::text)
+  and ($3::text = ''
+       or ($3::text = 'none' and coalesce(trim(p.jenis), '') = '')
+       or p.jenis = $3::text)`;
+
+const filterParams = (f: ProjectFilter) => [f.periode, f.pic, f.jenis];
+
+export async function getProjects(filter: ProjectFilter = EMPTY_FILTER) {
   await connection();
   const { rows } = await pool.query<Project & { akun: string | null }>(
-    `select id, name, description, slug, group_id, akun, created_at
-     from projects
-     where ($1::text = '' or periode like $1::text || '%')
-     order by created_at`,
-    [periode],
+    `select p.id, p.name, p.description, p.slug, p.group_id, p.akun, p.created_at
+     from projects p
+     where ${FILTER_WHERE}
+     order by p.created_at`,
+    filterParams(filter),
   );
   return rows;
 }
@@ -24,7 +36,7 @@ export async function getProjectGroups() {
   return rows;
 }
 
-export async function getProjectStats(periode = "") {
+export async function getProjectStats(filter: ProjectFilter = EMPTY_FILTER) {
   await connection();
   const { rows } = await pool.query<ProjectStats>(
     `select p.id, p.name, p.slug, p.group_id, p.akun, p.status, p.periode, p.upload_date,
@@ -33,9 +45,9 @@ export async function getProjectStats(periode = "") {
               and p.upload_date < (now() at time zone 'Asia/Jakarta')::date) as overdue
      from projects p
      left join master_options o on o.kind = 'status' and o.value = p.status
-     where ($1::text = '' or p.periode like $1::text || '%')
+     where ${FILTER_WHERE}
      order by p.created_at`,
-    [periode],
+    filterParams(filter),
   );
   return rows;
 }
@@ -55,7 +67,7 @@ export async function getProjectBySlug(slug: string) {
   return rows[0] ?? null;
 }
 
-export async function getProjectRows(periode = "") {
+export async function getProjectRows(filter: ProjectFilter = EMPTY_FILTER) {
   await connection();
   const { rows } = await pool.query<ProjectRow>(
     `select p.id, p.name, p.slug, p.group_id, p.pilar, p.jenis, p.tema, p.akun,
@@ -64,9 +76,9 @@ export async function getProjectRows(periode = "") {
             pr.full_name as pic_name, pr.email as pic_email
      from projects p
      left join profiles pr on pr.id = p.pic_id
-     where ($1::text = '' or p.periode like $1::text || '%')
+     where ${FILTER_WHERE}
      order by p.created_at`,
-    [periode],
+    filterParams(filter),
   );
   return rows;
 }
@@ -110,9 +122,7 @@ export async function getProfiles() {
   return rows;
 }
 
-const PERIODE_WHERE = "($1::text = '' or p.periode like $1::text || '%')";
-
-export async function getDashboardCharts(periode = "") {
+export async function getDashboardCharts(filter: ProjectFilter = EMPTY_FILTER) {
   await connection();
 
   const [jenis, pic] = await Promise.all([
@@ -122,22 +132,31 @@ export async function getDashboardCharts(periode = "") {
               count(*) filter (where coalesce(o.is_final, false))::int as done
        from projects p
        left join master_options o on o.kind = 'status' and o.value = p.status
-       where ${PERIODE_WHERE}
+       where ${FILTER_WHERE}
        group by 1
        order by total desc, label`,
-      [periode],
+      filterParams(filter),
     ),
-    pool.query<CountRow>(
-      `select coalesce(nullif(trim(pr.full_name), ''), pr.email) as label,
-              count(*)::int as total,
-              count(*) filter (where coalesce(o.is_final, false))::int as done
-       from projects p
-       join profiles pr on pr.id = p.pic_id
-       left join master_options o on o.kind = 'status' and o.value = p.status
-       where ${PERIODE_WHERE}
-       group by pr.id, 1
+    pool.query<PicRow>(
+      `select label,
+              sum(total)::int as total,
+              sum(done)::int as done,
+              json_object_agg(jenis, total) as jenis
+       from (
+         select pr.id as pic_id,
+                coalesce(nullif(trim(pr.full_name), ''), pr.email) as label,
+                coalesce(nullif(trim(p.jenis), ''), '(belum diisi)') as jenis,
+                count(*)::int as total,
+                count(*) filter (where coalesce(o.is_final, false))::int as done
+         from projects p
+         join profiles pr on pr.id = p.pic_id
+         left join master_options o on o.kind = 'status' and o.value = p.status
+         where ${FILTER_WHERE}
+         group by 1, 2, 3
+       ) x
+       group by pic_id, label
        order by done desc, total desc, label`,
-      [periode],
+      filterParams(filter),
     ),
   ]);
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import * as echarts from "echarts";
 import type { EChartsOption } from "echarts";
 
-import type { CountRow } from "@/lib/admin-types";
+import type { CountRow, PicRow } from "@/lib/admin-types";
 
 const PIE_COLORS = [
   "#f97fb3", "#3b82f6", "#22c55e", "#f59e0b",
@@ -12,7 +12,6 @@ const PIE_COLORS = [
 ];
 const DONE_COLOR = "#22c55e";
 const PENDING_COLOR = "#94a3b8";
-const PIC_COLOR = "#f97fb3";
 
 /* Tema (ikut class "dark" di <html>) */
 
@@ -238,49 +237,64 @@ function jenisOption(rows: CountRow[], isDark: boolean): EChartsOption {
   };
 }
 
-function picOption(rows: CountRow[], isDark: boolean): EChartsOption {
+/** Satu batang per PIC, ditumpuk per jenis konten. Urutan & warna jenis sama dengan donut. */
+function picOption(rows: PicRow[], jenisLabels: string[], isDark: boolean): EChartsOption {
   const t = themeColors(isDark);
   const axes = baseAxes(rows.map((r) => r.label), t);
 
   return {
     ...axes,
-    grid: { ...axes.grid, top: 24 },
+    legend: {
+      type: "scroll",
+      top: 0,
+      itemWidth: 10,
+      itemHeight: 10,
+      textStyle: { color: t.muted },
+      pageTextStyle: { color: t.muted },
+    },
     tooltip: {
       ...tooltipBase(t),
       trigger: "axis",
       axisPointer: { type: "shadow", shadowStyle: { color: "rgba(148,163,184,.12)" } },
       formatter: (params: unknown) => {
-        const item = (params as TooltipItem[])[0];
-        const data = item?.data as { value: number; total: number } | undefined;
-        const done = data?.value ?? 0;
-        const total = data?.total ?? 0;
-        const pct = total ? Math.round((done / total) * 100) : 0;
+        const items = params as (TooltipItem & { dataIndex: number })[];
+        const row = rows[items[0]?.dataIndex ?? 0];
+        if (!row) return "";
+        const pct = row.total ? Math.round((row.done / row.total) * 100) : 0;
+        const lines = items
+          .filter((p) => Number(p.value) > 0)
+          .map(
+            (p) =>
+              `<div style="display:flex;justify-content:space-between;gap:16px">` +
+              `<span>${p.marker ?? ""}${esc(p.seriesName)}</span><b>${esc(p.value)}</b></div>`,
+          )
+          .join("");
         return (
-          `<div style="font-weight:600;margin-bottom:4px">${esc(item?.name)}</div>` +
-          `<div style="display:flex;justify-content:space-between;gap:16px">` +
-          `<span>${item?.marker ?? ""}Selesai</span><b>${done}</b></div>` +
-          `<div style="display:flex;justify-content:space-between;gap:16px">` +
-          `<span>Total konten</span><b>${total}</b></div>` +
-          `<div style="display:flex;justify-content:space-between;gap:16px">` +
-          `<span>Persentase</span><b>${pct}%</b></div>`
+          `<div style="font-weight:600;margin-bottom:4px">${esc(row.label)}</div>${lines}` +
+          `<div style="margin-top:4px;padding-top:4px;border-top:1px solid ${t.tipBorder};` +
+          `display:flex;justify-content:space-between;gap:16px"><span>Total</span>` +
+          `<b>${row.total} (${pct}% selesai)</b></div>`
         );
       },
     },
-    series: [
-      {
-        name: "Selesai",
-        type: "bar",
+    series: jenisLabels.map((jenis, i) => {
+      const color = PIE_COLORS[i % PIE_COLORS.length];
+      return {
+        name: jenis,
+        type: "bar" as const,
+        stack: "total",
         barMaxWidth: 48,
-        showBackground: true,
-        backgroundStyle: { color: isDark ? "rgba(148,163,184,.08)" : "rgba(148,163,184,.12)", borderRadius: [6, 6, 0, 0] },
-        data: rows.map((r) => ({ value: r.done, total: r.total })),
-        itemStyle: { color: PIC_COLOR, borderRadius: [6, 6, 0, 0] },
-        label: { show: true, position: "top", color: t.muted, fontSize: 11 },
-        emphasis: {
-          itemStyle: { color: "#f45a9d", shadowBlur: 16, shadowColor: "rgba(249,127,179,.6)" },
+        data: rows.map((r) => r.jenis[jenis] ?? 0),
+        itemStyle: { color, borderRadius: [6, 6, 0, 0], borderColor: t.tipBg, borderWidth: 2 },
+        label: {
+          show: true,
+          color: "#fff",
+          fontSize: 11,
+          formatter: (p: { value?: unknown }) => (Number(p.value) > 0 ? String(p.value) : ""),
         },
-      },
-    ],
+        emphasis: { focus: "series" as const },
+      };
+    }),
   };
 }
 
@@ -342,13 +356,16 @@ export function DashboardCharts({
   byPic,
 }: {
   byJenis: CountRow[];
-  byPic: CountRow[];
+  byPic: PicRow[];
 }) {
   const isDark = useIsDark();
 
   const jenis = useMemo(() => jenisOption(byJenis, isDark), [byJenis, isDark]);
   const pie = useMemo(() => pieOption(byJenis, isDark), [byJenis, isDark]);
-  const pic = useMemo(() => picOption(byPic, isDark), [byPic, isDark]);
+  const pic = useMemo(
+    () => picOption(byPic, byJenis.map((r) => r.label), isDark),
+    [byPic, byJenis, isDark],
+  );
 
   const hasJenisTotal = byJenis.some((r) => r.total > 0);
 

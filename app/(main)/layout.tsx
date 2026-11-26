@@ -13,10 +13,12 @@ import {
 import { AppSidebar } from "@/app/components/app-sidebar";
 import { geistMono, geistSans } from "@/app/fonts";
 import { getCurrentUser } from "@/lib/admin-auth";
-import { getProjectGroups, getProjects, getPeriodeYears } from "@/lib/queries";
+import { getProjectGroups, getProjects, getPeriodeYears, getProfiles } from "@/lib/queries";
 import { getAccountOptions } from "@/lib/pilar-queries";
 import { PeriodeFilter } from "@/app/components/periode-filter";
-import { getPeriodeFilter } from "@/lib/periode-filter";
+import { ProjectFilters } from "@/app/components/project-filter";
+import { getProjectFilter } from "@/lib/periode-filter";
+import { getMasterOptions } from "@/lib/master-queries";
 
 export const metadata: Metadata = {
   title: "CGKN DIGIMAR",
@@ -28,9 +30,9 @@ async function SidebarLoader() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const periode = await getPeriodeFilter();
+  const filter = await getProjectFilter();
   const [projects, groups, accounts] = await Promise.all([
-    getProjects(periode),
+    getProjects(filter),
     getProjectGroups(),
     getAccountOptions(),
   ]);
@@ -45,10 +47,25 @@ async function SidebarLoader() {
   );
 }
 
+async function HeaderFiltersLoader() {
+  const [filter, years, profiles, master] = await Promise.all([
+    getProjectFilter(),
+    getPeriodeYears(),
+    getProfiles(),
+    getMasterOptions(),
+  ]);
 
-  async function PeriodeFilterLoader() {
-  const [value, years] = await Promise.all([getPeriodeFilter(), getPeriodeYears()]);
-  return <PeriodeFilter value={value} years={years} />;
+  return (
+    <>
+      <ProjectFilters
+        pic={filter.pic}
+        jenis={filter.jenis}
+        profiles={profiles}
+        jenisOptions={master.jenis}
+      />
+      <PeriodeFilter value={filter.periode} years={years} />
+    </>
+  );
 }
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
@@ -70,11 +87,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarLoader />
             </Suspense>
             <SidebarInset>
-              <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <header className="sticky top-0 z-20 flex min-h-12 items-center gap-2 border-b border-border bg-background/80 px-4 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <SidebarTrigger className="md:hidden" />
-                <div className="ml-auto flex items-center gap-2">
+                <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
                   <Suspense fallback={<div className="h-8 w-[17rem]" />}>
-                    <PeriodeFilterLoader />
+                    <HeaderFiltersLoader />
                   </Suspense>
                   <ThemeToggle />
                 </div>

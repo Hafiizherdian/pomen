@@ -8,6 +8,7 @@ import { JENIS_KONTEN, PROJECT_STATUSES } from "@/lib/project-config";
 import { listOptionValues } from "@/lib/master-queries";
 import { isPeriode, PERIODE_COOKIE, parsePeriodeFilter  } from "@/lib/periode";
 import { cookies } from "next/headers";
+import { JENIS_COOKIE, PIC_COOKIE, cleanFilterValue } from "@/lib/project-filter";
 
 const PRIORITIES = ["low", "medium", "high"];
 
@@ -337,6 +338,23 @@ export async function setPeriodeFilter(value: string) {
     });
   } else {
     store.delete(PERIODE_COOKIE);
+  }
+  refresh();
+}
+
+export async function setProjectFilter(key: "pic" | "jenis", value: string) {
+  if (key !== "pic" && key !== "jenis") throw new Error("Filter tidak dikenal");
+  const cookie = key === "pic" ? PIC_COOKIE : JENIS_COOKIE;
+  const next = cleanFilterValue(value);
+  const store = await cookies();
+  if (next) {
+    store.set(cookie, next, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  } else {
+    store.delete(cookie);
   }
   refresh();
 }

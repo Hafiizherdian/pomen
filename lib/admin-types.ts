@@ -73,6 +73,11 @@ export interface CountRow {
   done: number;
 }
 
+export interface PicRow extends CountRow {
+  /** Jumlah konten per jenis konten, mis. { "Carousel": 3, "Video/Reels": 5 }. */
+  jenis: Record<string, number>;
+}
+
 export interface AkunRow extends CountRow {
   /** Target produksi per minggu; null jika tidak berlaku. */
   target: number | null;

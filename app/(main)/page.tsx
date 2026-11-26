@@ -4,10 +4,10 @@ import { Suspense } from "react";
 import { GroupProgressList, type GroupProgress } from "@/app/components/group-progress";
 import { getDashboardCharts, getProjectGroups, getProjectStats } from "@/lib/queries";
 import type { ProjectStats } from "@/lib/types";
-import { getPeriodeFilter } from "@/lib/periode-filter";
+import { getProjectFilter } from "@/lib/periode-filter";
 import { DashboardCharts } from "@/app/components/dashboard-charts";
 
-const UNGROUPED_COLOR = "#94a3b8";
+const UNGROUPED_COLOR = "#faf2f2";
 
 export default function Home() {
   return (
@@ -127,11 +127,11 @@ function toItems(list: ProjectStats[]) {
 }
 
 async function Overview() {
-  const periode = await getPeriodeFilter();
+  const filter = await getProjectFilter();
   const [projects, groups, charts] = await Promise.all([
-    getProjectStats(periode),
+    getProjectStats(filter),
     getProjectGroups(),
-    getDashboardCharts(periode),
+    getDashboardCharts(filter),
   ]);
   const total = projects.length;
   const done = projects.filter((p) => p.is_done).length;
@@ -181,7 +181,9 @@ async function Overview() {
         <h2 className="text-sm font-medium">Progres konten</h2>
         {progress.length === 0 ? (
           <p className="text-sm text-muted">
-            Belum ada konten.{" "}
+            {filter.periode || filter.pic || filter.jenis
+              ? "Tidak ada konten untuk filter ini."
+              : "Belum ada konten."}{" "}
             <Link href="/projects" className="underline">
               Buat konten
             </Link>

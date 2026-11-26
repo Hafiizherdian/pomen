@@ -13,10 +13,10 @@ import { getProfiles, getProjectGroups, getProjectRows } from "@/lib/queries";
 import { getAccountOptions, getPilarOptions } from "@/lib/pilar-queries";
 import { getMasterOptions } from "@/lib/master-queries";
 import { currentPeriode, formatPeriodeFilter, isPeriode } from "@/lib/periode";
-import { getPeriodeFilter } from "@/lib/periode-filter";
+import { getProjectFilter } from "@/lib/periode-filter";
 import { cn } from "@/lib/utils";
 
-const UNGROUPED_COLOR = "#94a3b8";
+const UNGROUPED_COLOR = "#faf2f2";
 
 type SearchParams = Promise<{ group?: string }>;
 
@@ -73,7 +73,8 @@ function FolderTile({
 }
 
 async function ProjectsContent({ searchParams }: { searchParams: SearchParams }) {
-  const periode = await getPeriodeFilter();
+  const filter = await getProjectFilter();
+  const { periode } = filter;
 
   const [{ group: groupParam }, groups, profiles, pilarOptions, accountOptions, rows, master] =
     await Promise.all([
@@ -82,7 +83,7 @@ async function ProjectsContent({ searchParams }: { searchParams: SearchParams })
       getProfiles(),
       getPilarOptions(),
       getAccountOptions(),
-      getProjectRows(periode), // sudah difilter di query
+      getProjectRows(filter), // sudah difilter di query
       getMasterOptions(),
     ]);
 
