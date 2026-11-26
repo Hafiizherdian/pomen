@@ -70,7 +70,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               <SidebarLoader />
             </Suspense>
             <SidebarInset>
-              <header className="flex h-12 items-center gap-2 px-4">
+              <header className="sticky top-0 z-20 flex h-12 items-center gap-2 border-b border-border bg-background/80 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <SidebarTrigger className="md:hidden" />
                 <div className="ml-auto flex items-center gap-2">
                   <Suspense fallback={<div className="h-8 w-[17rem]" />}>

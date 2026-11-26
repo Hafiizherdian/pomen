@@ -47,6 +47,9 @@ const mainNav = [
   { title: "Project", href: "/projects", icon: LayoutList },
 ];
 
+/** Jumlah project yang tampil di folder akun sebelum daftar bisa di-scroll. */
+const AKUN_VISIBLE_ITEMS = 5;
+
 /** Isi menu. `pathname` null = belum diketahui (tidak ada item yang aktif). */
 function NavContent({
   projects,
@@ -135,7 +138,14 @@ function NavContent({
                         </SidebarMenuButton>
 
                         <SidebarCollapsibleContent>
-                          <SidebarMenuSub>
+                          {/* Tampil 5 project, sisanya scroll di dalam folder akun ini. */}
+                          <SidebarMenuSub
+                            className={
+                              section.items.length > AKUN_VISIBLE_ITEMS
+                                ? "max-h-40 overflow-y-auto overscroll-contain pr-1 [scrollbar-width:thin]"
+                                : undefined
+                            }
+                          >
                             {section.items.map((project) => {
                               const href = `/projects/${project.slug}`;
                               const color = project.group_id

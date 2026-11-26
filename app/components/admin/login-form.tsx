@@ -2,13 +2,9 @@
 
 // app/components/admin/login-form.tsx
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import { AlertCircle, Eye, EyeOff, Loader2, LogIn, TriangleAlert } from "lucide-react";
 
-/** Hanya izinkan redirect internal (cegah open redirect). */
-function safeNext(next: string) {
-  return next.startsWith("/") && !next.startsWith("//") ? next : "/";
-}
+import { login } from "@/app/auth-actions";
 
 const inputClass =
   "h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-foreground " +
@@ -18,52 +14,20 @@ const inputClass =
   "disabled:opacity-60";
 
 export function LoginForm({ next }: { next: string }) {
-  const router = useRouter();
+  // `login` adalah server action; redirect setelah sukses ditangani di server.
+  const [state, formAction, pending] = React.useActionState(login, undefined);
 
   const [username, setUsername] = React.useState("");
-  const [password, setPassword] = React.useState("");
   const [showPass, setShowPass] = React.useState(false);
   const [capsLock, setCapsLock] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-
-    if (!username.trim() || !password) {
-      setError("Username dan password wajib diisi.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      // Sesuaikan endpoint/server action dengan implementasi login Anda.
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), password }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (res.ok) {
-        router.replace(safeNext(next));
-        router.refresh();
-        return; // biarkan loading tetap aktif selama redirect
-      }
-      setError(data.error || "Username atau password salah.");
-    } catch {
-      setError("Tidak bisa terhubung ke server. Coba lagi.");
-    }
-    setLoading(false);
-  };
-
+  const error = state?.error;
   const hasError = Boolean(error);
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5">
+    <form action={formAction} className="space-y-5">
+      <input type="hidden" name="next" value={next} />
+
       {hasError && (
         <div
           role="alert"
@@ -82,17 +46,15 @@ export function LoginForm({ next }: { next: string }) {
           id="username"
           name="username"
           type="text"
+          required
           value={username}
-          onChange={(e) => {
-            setUsername(e.target.value);
-            setError("");
-          }}
+          onChange={(e) => setUsername(e.target.value)}
           placeholder="Masukkan username"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
           autoFocus
-          disabled={loading}
+          readOnly={pending}
           aria-invalid={hasError || undefined}
           className={inputClass}
         />
@@ -107,16 +69,12 @@ export function LoginForm({ next }: { next: string }) {
             id="password"
             name="password"
             type={showPass ? "text" : "password"}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              setError("");
-            }}
+            required
             onKeyUp={(e) => setCapsLock(e.getModifierState("CapsLock"))}
             onBlur={() => setCapsLock(false)}
             placeholder="Masukkan password"
             autoComplete="current-password"
-            disabled={loading}
+            readOnly={pending}
             aria-invalid={hasError || undefined}
             className={`${inputClass} pr-11`}
           />
@@ -125,14 +83,14 @@ export function LoginForm({ next }: { next: string }) {
             onClick={() => setShowPass((v) => !v)}
             aria-label={showPass ? "Sembunyikan password" : "Tampilkan password"}
             aria-pressed={showPass}
-            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-muted transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 cursor-pointer"
           >
             {showPass ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
         {capsLock && (
-          <p className="flex items-center gap-1.5 text-xs text-muted" role="status">
-            <TriangleAlert className="size-3.5 color-alert" aria-hidden />
+          <p className="flex items-center gap-1.5 text-xs text-warning" role="status">
+            <TriangleAlert className="size-3.5" aria-hidden />
             Caps Lock aktif
           </p>
         )}
@@ -140,10 +98,10 @@ export function LoginForm({ next }: { next: string }) {
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={pending}
         className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent text-sm font-semibold text-accent-foreground transition hover:opacity-90 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading ? (
+        {pending ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden /> Memproses…
           </>

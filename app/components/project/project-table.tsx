@@ -169,16 +169,19 @@ export function ProjectTable({
         {pending ? "Menyimpan..." : "Klik sel untuk mengedit. Auto Save."}
       </p>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      <div className="max-h-[calc(140vh-13rem)] overflow-auto rounded-xl border border-border bg-surface">
         <table className="w-full min-w-[110rem] border-collapse text-sm">
-          <thead className="bg-default/60 text-left">
+          <thead className="text-left">
             <tr>
               {headers.map((h) => (
-                <th key={h} className="border-b border-border px-3 py-2.5 font-semibold">
+                <th
+                  key={h}
+                  className="sticky top-0 z-10 bg-default px-3 py-2.5 font-semibold shadow-[0_1px_0_0_var(--border)]"
+                >
                   {h}
                 </th>
               ))}
-              <th className="w-20 border-b border-border" />
+              <th className="sticky top-0 z-10 w-20 bg-default shadow-[0_1px_0_0_var(--border)]" />
             </tr>
           </thead>
           <tbody>

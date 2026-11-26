@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: [
-        "localhost:3001",
+        "localhost:3000",
         "*.devtunnels.ms",
       ],
     },
