@@ -1,0 +1,49 @@
+name: Deploy pomen ke vps
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+
+            echo "=== Masuk ke direktori app ==="
+            cd ~/pomen
+
+            echo "=== Mengambil pembaharuan list branch dari GitHub ==="
+            git fetch origin
+
+            echo "=== Reset paksa ke origin/master (hindari conflict lockfile/local changes) ==="
+            git checkout master || git checkout -b main origin/master
+            git reset --hard origin/master
+            git clean -fd
+
+            echo "=== Install dependencies ==="
+            npm ci 
+
+            echo "=== Build Next.js ==="
+            npm run build
+
+            echo "=== Restart PM2 ==="
+            pm2 restart pomen --update-env
+
+            echo "=== Save PM2 state ==="
+            pm2 save
+
+            echo "=== Deploy selesai ==="
