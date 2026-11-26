@@ -3,9 +3,13 @@
 import { useTransition } from "react";
 import { setProjectFilter } from "@/app/actions";
 import { FILTER_NONE } from "@/lib/project-filter";
+import { cn } from "@/lib/utils";
 
 const selectClass =
   "h-8 max-w-44 rounded-lg border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-focus disabled:opacity-50";
+
+/** Border penanda filter yang sedang aktif. Ganti warnanya di sini. */
+const activeClass = "border-blue-500 ring-1 ring-blue-500";
 
 type Option = { value: string; label: string };
 
@@ -35,7 +39,7 @@ function FilterSelect({
       disabled={pending}
       aria-busy={pending}
       aria-label={label}
-      className={selectClass}
+      className={cn(selectClass, value && activeClass)}
       onChange={(e) => {
         const next = e.target.value;
         startTransition(() => setProjectFilter(name, next));

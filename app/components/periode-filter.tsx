@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { setPeriodeFilter } from "@/app/actions";
+import { cn } from "@/lib/utils";
 
 const MONTHS = [
   "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -10,6 +11,9 @@ const MONTHS = [
 
 const selectClass =
   "h-8 rounded-lg border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-focus disabled:opacity-50";
+
+/** Border penanda filter yang sedang aktif. Ganti warnanya di sini. */
+const activeClass = "border-blue-500 ring-1 ring-blue-500";
 
 export function PeriodeFilter({ value, years }: { value: string; years: string[] }) {
   const [pending, startTransition] = useTransition();
@@ -26,7 +30,7 @@ export function PeriodeFilter({ value, years }: { value: string; years: string[]
         defaultValue={year}
         disabled={pending}
         aria-label="Filter tahun"
-        className={selectClass}
+        className={cn(selectClass, year && activeClass)}
         onChange={(e) => apply(e.target.value, e.target.value ? month : "")}
       >
         <option value="">Semua tahun</option>
@@ -41,7 +45,7 @@ export function PeriodeFilter({ value, years }: { value: string; years: string[]
         defaultValue={month}
         disabled={pending || !year}
         aria-label="Filter bulan"
-        className={selectClass}
+        className={cn(selectClass, month && activeClass)}
         onChange={(e) => apply(year, e.target.value)}
       >
         <option value="">Semua bulan</option>
