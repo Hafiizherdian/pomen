@@ -6,6 +6,7 @@ import { pool, withTransaction } from "@/lib/db";
 import { assertAdmin, assertRole } from "@/lib/admin-auth";
 import type { ActionResult, MasterKind } from "@/lib/admin-types";
 import type { Role } from "@/lib/roles";
+import { isStatusColor } from "@/lib/status-colors";
 
 /* Util */
 
@@ -182,6 +183,17 @@ export async function setOptionFinal(id: string, isFinal: boolean) {
     await pool.query("update master_options set is_final = $2 where id = $1 and kind = 'status'", [
       id,
       Boolean(isFinal),
+    ]);
+  });
+}
+
+/** color kosong = otomatis. */
+export async function setOptionColor(id: string, color: string) {
+  return guard(async () => {
+    if (color && !isStatusColor(color)) throw new UserError("Warna tidak valid");
+    await pool.query("update master_options set color = $2 where id = $1 and kind = 'status'", [
+      id,
+      color || null,
     ]);
   });
 }

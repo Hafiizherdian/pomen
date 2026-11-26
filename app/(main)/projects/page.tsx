@@ -168,7 +168,7 @@ async function ProjectsContent({ searchParams }: { searchParams: SearchParams })
           accountOptions={accountOptions}
           statusValues={master.statuses}
           jenisValues={master.jenis}
-          doneStatuses={master.doneStatuses}
+          statusClasses={master.statusClasses}
         />
       </section>
     </>

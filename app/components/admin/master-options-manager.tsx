@@ -8,6 +8,7 @@ import {
   deleteOption,
   moveOption,
   renameOption,
+  setOptionColor,
   setOptionFinal,
 } from "@/app/admin-actions";
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/app/components/admin/admin-ui";
 import { useAdminAction, type RunAction } from "@/app/components/admin/use-admin-action";
 import type { MasterKind, OptionRow } from "@/lib/admin-types";
+import { STATUS_COLORS, statusRowClass } from "@/lib/status-colors";
 
 function OptionList({
   kind,
@@ -94,6 +96,33 @@ function OptionList({
             />
 
             {showFinal && (
+              <div className="flex shrink-0 items-center gap-1.5">
+                {/* Pratinjau warna baris */}
+                <span
+                  aria-hidden="true"
+                  className={`size-4 rounded border border-border ${statusRowClass(option.color, option.is_final)}`}
+                />
+                <select
+                  key={option.color ?? ""}
+                  defaultValue={option.color ?? ""}
+                  aria-label={`Warna status ${option.value}`}
+                  className="h-8 rounded-lg border border-border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-focus"
+                  onChange={(e) => {
+                    const color = e.target.value;
+                    run(() => setOptionColor(option.id, color));
+                  }}
+                >
+                  <option value="">Otomatis</option>
+                  {Object.entries(STATUS_COLORS).map(([key, c]) => (
+                    <option key={key} value={key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {showFinal && (
               <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
                 <input
                   type="checkbox"
@@ -153,7 +182,7 @@ export function MasterOptionsManager({ options }: { options: OptionRow[] }) {
         <OptionList
           kind="status"
           title="Status"
-          description='Status "Dihitung selesai" diberi highlight kuning di tabel Project dan dihitung sebagai selesai di Laporan.'
+          description='Status "Dihitung selesai" dihitung sebagai selesai di Laporan. Warna dipakai untuk baris di tabel Project (Otomatis: kuning jika dihitung selesai).'
           options={options.filter((o) => o.kind === "status")}
           run={run}
           showFinal

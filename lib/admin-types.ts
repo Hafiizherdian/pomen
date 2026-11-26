@@ -14,6 +14,8 @@ export interface MasterOption {
   position: number;
   /** Hanya untuk status: dihitung sebagai "selesai" (highlight tabel + laporan). */
   is_final: boolean;
+  /** Hanya untuk status: kunci warna baris (lihat lib/status-colors); null = otomatis. */
+  color: string | null;
 }
 
 export interface OptionRow extends MasterOption {

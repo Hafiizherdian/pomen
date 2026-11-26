@@ -141,7 +141,7 @@ export function ProjectTable({
   accountOptions,
   statusValues,
   jenisValues,
-  doneStatuses,
+  statusClasses,
 }: {
   rows: ProjectRow[];
   groups: ProjectGroup[];
@@ -150,7 +150,7 @@ export function ProjectTable({
   accountOptions: string[];
   statusValues: string[];
   jenisValues: string[];
-  doneStatuses: string[];
+  statusClasses: Record<string, string>;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -197,7 +197,7 @@ export function ProjectTable({
                   key={row.id}
                   className={cn(
                     "border-b border-border align-top last:border-b-0",
-                    doneStatuses.includes(row.status) && "bg-yellow-200 dark:bg-yellow-500/25",
+                    statusClasses[row.status],
                   )}
                 >
                   <td className="px-3 py-2.5 tabular-nums">{index + 1}</td>

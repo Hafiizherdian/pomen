@@ -47,7 +47,7 @@ export async function getMembers(): Promise<MemberRow[]> {
 export async function getOptionsWithUsage(): Promise<OptionRow[]> {
   await connection();
   const { rows } = await pool.query<OptionRow>(`
-    select o.id, o.kind, o.value, o.position, o.is_final,
+    select o.id, o.kind, o.value, o.position, o.is_final, o.color,
            case o.kind
              when 'status' then (select count(*)::int from projects p where p.status = o.value)
              else (select count(*)::int from projects p where p.jenis = o.value)

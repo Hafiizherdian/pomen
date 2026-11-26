@@ -2,11 +2,12 @@ import "server-only";
 import { connection } from "next/server";
 import { pool } from "@/lib/db";
 import type { MasterKind, MasterOption } from "@/lib/admin-types";
+import { statusRowClass } from "@/lib/status-colors";
 
 export async function getMasterOptionRows(): Promise<MasterOption[]> {
   await connection();
   const { rows } = await pool.query<MasterOption>(
-    `select id, kind, value, position, is_final
+    `select id, kind, value, position, is_final, color
      from master_options
      order by kind, position, created_at, id`,
   );
@@ -20,6 +21,10 @@ export async function getMasterOptions() {
   return {
     statuses: status.map((r) => r.value),
     doneStatuses: status.filter((r) => r.is_final).map((r) => r.value),
+    /** Nama status -> kelas warna baris tabel. */
+    statusClasses: Object.fromEntries(
+      status.map((r) => [r.value, statusRowClass(r.color, r.is_final)]),
+    ),
     jenis: rows.filter((r) => r.kind === "jenis").map((r) => r.value),
   };
 }
