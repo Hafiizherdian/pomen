@@ -125,9 +125,9 @@ export async function importProjects(input: {
           const res = await client.query<{ id: string }>(
             `insert into projects
                (name, slug, group_id, pilar, jenis, tema, akun, keyword, hook, cta,
-                prod_date, editor_date, selesai_date, upload_date, pic_id, status, periode)
+                prod_date, editor_date, selesai_date, upload_date, pic_id, status, periode, created_at)
              values ($1, $2, $3::uuid, $4, $5, $6, $7, $8, $9, $10,
-                     $11::date, $12::date, $13::date, $14::date, $15::uuid, $16, $17)
+                     $11::date, $12::date, $13::date, $14::date, $15::uuid, $16, $17, clock_timestamp())
              on conflict (slug) do nothing returning id`,
             [
               row.name,

@@ -22,7 +22,7 @@ export async function getProjects(filter: ProjectFilter = EMPTY_FILTER) {
     `select p.id, p.name, p.description, p.slug, p.group_id, p.akun, p.created_at
      from projects p
      where ${FILTER_WHERE}
-     order by p.created_at`,
+     order by p.created_at, p.name, p.id`,
     filterParams(filter),
   );
   return rows;
@@ -46,7 +46,7 @@ export async function getProjectStats(filter: ProjectFilter = EMPTY_FILTER) {
      from projects p
      left join master_options o on o.kind = 'status' and o.value = p.status
      where ${FILTER_WHERE}
-     order by p.created_at`,
+     order by p.created_at, p.name, p.id`,
     filterParams(filter),
   );
   return rows;
@@ -77,7 +77,7 @@ export async function getProjectRows(filter: ProjectFilter = EMPTY_FILTER) {
      from projects p
      left join profiles pr on pr.id = p.pic_id
      where ${FILTER_WHERE}
-     order by p.created_at`,
+     order by p.created_at, p.name, p.id`,
     filterParams(filter),
   );
   return rows;
