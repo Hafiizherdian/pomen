@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useTransition } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { useState, useTransition } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ArrowUpRight } from "lucide-react";
 
 import { setProjectGroup, updateProjectField } from "@/app/actions";
 import { DeleteProjectButton } from "@/app/components/project/delete-project-button";
@@ -111,25 +111,41 @@ function toOptions(values: readonly string[], current: string): Option[] {
   return list.map((v) => ({ value: v, label: v }));
 }
 
-const headers = [
-  "NO",
-  "Judul Konten",
-  "Group",
-  "Bulan",
-  "Pilar Konten",
-  "Jenis Konten",
-  "Tema",
-  "Akun",
-  "Fokus Keyword",
-  "HOOK",
-  "CTA",
-  "Tgl Produksi",
-  "Tgl Masuk Editor",
-  "Tgl Selesai",
-  "PIC",
-  "Tgl Upload",
-  "Status",
+type SortKey =
+  | "name" | "group" | "periode" | "pilar" | "jenis" | "tema" | "akun" | "keyword"
+  | "hook" | "cta" | "prod_date" | "editor_date" | "selesai_date" | "pic"
+  | "upload_date" | "status";
+
+type Sort = { key: SortKey; dir: "asc" | "desc" } | null;
+
+/** Kolom tanpa `key` tidak bisa di-sort. */
+const headers: { label: string; key?: SortKey }[] = [
+  { label: "NO" },
+  { label: "Judul Konten", key: "name" },
+  { label: "Group", key: "group" },
+  { label: "Bulan", key: "periode" },
+  { label: "Pilar Konten", key: "pilar" },
+  { label: "Jenis Konten", key: "jenis" },
+  { label: "Tema", key: "tema" },
+  { label: "Akun", key: "akun" },
+  { label: "Fokus Keyword", key: "keyword" },
+  { label: "HOOK", key: "hook" },
+  { label: "CTA", key: "cta" },
+  { label: "Tgl Produksi", key: "prod_date" },
+  { label: "Tgl Masuk Editor", key: "editor_date" },
+  { label: "Tgl Selesai", key: "selesai_date" },
+  { label: "PIC", key: "pic" },
+  { label: "Tgl Upload", key: "upload_date" },
+  { label: "Status", key: "status" },
 ];
+
+const collator = new Intl.Collator("id", { numeric: true, sensitivity: "base" });
+
+/** Nilai kosong selalu di bawah, baik urutan naik maupun turun. */
+function compareValues(a: string, b: string, dir: "asc" | "desc") {
+  if (!a || !b) return a ? -1 : b ? 1 : 0;
+  return dir === "asc" ? collator.compare(a, b) : collator.compare(b, a);
+}
 
 const cellW = "px-2 py-1.5";
 
@@ -163,6 +179,38 @@ export function ProjectTable({
     label: p.full_name || p.email,
   }));
 
+  const [sort, setSort] = useState<Sort>(null);
+
+  // Klik berulang: naik -> turun -> urutan asli.
+  const toggleSort = (key: SortKey) =>
+    setSort((current) => {
+      if (current?.key !== key) return { key, dir: "asc" };
+      return current.dir === "asc" ? { key, dir: "desc" } : null;
+    });
+
+  /** Teks yang dibandingkan untuk satu sel. */
+  const sortValue = (row: ProjectRow, key: SortKey): string => {
+    switch (key) {
+      case "group":
+        return groupOptions.find((g) => g.value === row.group_id)?.label ?? "";
+      case "pic":
+        return row.pic_name || row.pic_email || "";
+      case "status": {
+        // Ikut urutan status di halaman Admin, bukan abjad.
+        const i = statusValues.indexOf(row.status);
+        return String(i < 0 ? statusValues.length : i);
+      }
+      default:
+        return row[key] ?? "";
+    }
+  };
+
+  const sortedRows = sort
+    ? [...rows].sort((a, b) =>
+        compareValues(sortValue(a, sort.key), sortValue(b, sort.key), sort.dir),
+      )
+    : rows;
+
   return (
     <div className="space-y-2 w-full">
       <p className="h-4 text-xs text-muted">
@@ -173,14 +221,33 @@ export function ProjectTable({
         <table className="w-full min-w-[110rem] border-collapse text-sm">
           <thead className="text-left">
             <tr>
-              {headers.map((h) => (
-                <th
-                  key={h}
-                  className="sticky top-0 z-10 bg-default px-3 py-2.5 font-semibold shadow-[0_1px_0_0_var(--border)]"
-                >
-                  {h}
-                </th>
-              ))}
+              {headers.map(({ label, key }) => {
+                const dir = key && sort?.key === key ? sort.dir : null;
+                const Icon = dir === "asc" ? ArrowUp : dir === "desc" ? ArrowDown : ArrowUpDown;
+                return (
+                  <th
+                    key={label}
+                    aria-sort={dir ? (dir === "asc" ? "ascending" : "descending") : undefined}
+                    className="sticky top-0 z-10 bg-default px-3 py-2.5 font-semibold shadow-[0_1px_0_0_var(--border)]"
+                  >
+                    {key ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(key)}
+                        className="flex cursor-pointer items-center gap-1 whitespace-nowrap rounded outline-none focus-visible:ring-2 focus-visible:ring-focus"
+                      >
+                        {label}
+                        <Icon
+                          aria-hidden="true"
+                          className={cn("size-3.5 shrink-0", !dir && "opacity-40")}
+                        />
+                      </button>
+                    ) : (
+                      label
+                    )}
+                  </th>
+                );
+              })}
               <th className="sticky top-0 z-10 w-20 bg-default shadow-[0_1px_0_0_var(--border)]" />
             </tr>
           </thead>
@@ -192,7 +259,7 @@ export function ProjectTable({
                 </td>
               </tr>
             ) : (
-              rows.map((row, index) => (
+              sortedRows.map((row, index) => (
                 <tr
                   key={row.id}
                   className={cn(
