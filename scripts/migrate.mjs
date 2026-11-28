@@ -20,3 +20,5 @@ try {
 } finally {
   await client.end();
 }
+
+// node --env-file=.env.local scripts/migrate.mjs

@@ -170,6 +170,19 @@ alter table profiles
 
 alter table profiles add column if not exists username text;
 
+create table if not exists login_history (
+  id          bigint generated always as identity primary key,
+  user_id     uuid references profiles(id) on delete set null,
+  username    text not null,
+  success     boolean not null,
+  ip_address  text,
+  user_agent  text,
+  created_at  timestamptz not null default now()
+);
+
+create index if not exists login_history_created_at_idx
+  on login_history (created_at desc);
+
 create unique index if not exists profiles_username_key on profiles (username);
 
 create index if not exists import_logs_created_idx on import_logs(created_at desc);
