@@ -67,6 +67,7 @@ export interface TaskInput {
 }
 
 export interface ProjectDetails {
+  status: string;
   pilar: string | null;
   jenis: string | null;
   tema: string | null;

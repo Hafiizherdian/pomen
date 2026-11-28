@@ -4,6 +4,8 @@ import { KanbanBoard } from "@/app/components/ui/kanban-board";
 import { getBoard, getProfiles, getProjectBySlug } from "@/lib/queries";
 import { Plus } from "lucide-react";
 import { addColumnAction } from "@/app/actions";
+import { ProjectStatusSelect } from "@/app/components/project/project-status-select";
+import { getMasterOptions } from "@/lib/master-queries";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-focus";
@@ -32,7 +34,11 @@ async function Board({ params }: { params: Promise<{ slug: string }> }) {
   const project = await getProjectBySlug(slug);
   if (!project) notFound();
 
-  const [columns, profiles] = await Promise.all([getBoard(project.id), getProfiles()]);
+  const [columns, profiles, master] = await Promise.all([
+    getBoard(project.id),
+    getProfiles(),
+    getMasterOptions(),
+  ]);
 
   const details: [string, string | null][] = [
     ["Pilar Konten", project.pilar],
@@ -58,25 +64,34 @@ async function Board({ params }: { params: Promise<{ slug: string }> }) {
           {project.description && <p className="text-sm text-muted">{project.description}</p>}
         </div>
 
-        <form
-          action={addColumnAction.bind(null, project.id)}
-          className="flex w-full gap-2 sm:w-72"
-        >
-          <input
-            name="name"
-            required
-            placeholder="Kolom baru..."
-            aria-label="Nama kolom baru"
-            className={inputClass}
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <ProjectStatusSelect
+            id={project.id}
+            status={project.status}
+            statuses={master.statuses}
+            className={master.statusClasses[project.status]}
           />
-          <button
-            type="submit"
-            aria-label="Tambah kolom"
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground"
+
+          <form
+            action={addColumnAction.bind(null, project.id)}
+            className="flex min-w-0 flex-1 gap-2 sm:w-72 sm:flex-none"
           >
-            <Plus className="size-4" />
-          </button>
-        </form>
+            <input
+              name="name"
+              required
+              placeholder="Board baru..."
+              aria-label="Nama Board baru"
+              className={inputClass}
+            />
+            <button
+              type="submit"
+              aria-label="Tambah kolom"
+              className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground"
+            >
+              <Plus className="size-4" />
+            </button>
+          </form>
+        </div>
       </div>
 
       {filled.length > 0 && (

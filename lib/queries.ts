@@ -57,7 +57,7 @@ export async function getProjectBySlug(slug: string) {
   const { rows } = await pool.query<ProjectWithDetails>(
     `select p.id, p.name, p.description, p.slug, p.group_id, p.created_at,
             p.pilar, p.jenis, p.tema, p.akun, p.keyword, p.hook, p.cta,
-            p.prod_date, p.editor_date, p.selesai_date, p.upload_date, p.pic_id,
+            p.prod_date, p.editor_date, p.selesai_date, p.upload_date, p.pic_id, p.status,
             pr.full_name as pic_name, pr.email as pic_email
      from projects p
      left join profiles pr on pr.id = p.pic_id
