@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { pool } from "@/lib/db";
 import { SESSION_COOKIE, SESSION_MAX_AGE, createSessionToken } from "@/lib/admin-token";
 import { verifyPassword } from "@/lib/password";
+import { recordLogin } from "@/lib/login-history";
 import { isRole } from "@/lib/roles";
 import { normalizeUsername } from "@/lib/username";
 import type { LoginState } from "@/lib/admin-types";
@@ -34,6 +35,7 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
       (await verifyPassword(password, user.password_hash)),
   );
   if (!user || !isRole(user.role) || !valid) {
+    await recordLogin(user?.id ?? null, username, false);
     await new Promise((resolve) => setTimeout(resolve, 600));
     return { error: "Username atau password salah." };
   }
@@ -47,6 +49,8 @@ export async function login(_prev: LoginState, formData: FormData): Promise<Logi
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });
+
+  await recordLogin(user.id, username, true);
 
   // Hanya terima alamat internal supaya tidak jadi open redirect.
   redirect(next.startsWith("/") && !next.startsWith("//") ? next : "/");

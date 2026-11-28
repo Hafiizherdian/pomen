@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { KeyRound, Plus } from "lucide-react";
+import { Copy, History, KeyRound, Plus, RefreshCw } from "lucide-react";
 
 import {
   createAccount,
@@ -16,16 +16,68 @@ import {
   cellClass,
   inputClass,
 } from "@/app/components/admin/admin-ui";
+import { LoginHistoryModal } from "@/app/components/admin/login-history-modal";
 import { useAdminAction, type RunAction } from "@/app/components/admin/use-admin-action";
 import type { AccountRow } from "@/lib/admin-types";
+import { generatePassword } from "@/lib/password-generator";
 import { ROLES, ROLE_LABEL, isRole, type Role } from "@/lib/roles";
 
 const smallSelect =
   "h-8 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-focus disabled:opacity-50";
 
+const iconButton =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-border text-muted transition-colors hover:bg-default hover:text-foreground disabled:opacity-50";
+
+/** Tombol buat password acak dan salin. */
+function PasswordTools({ value, onGenerate }: { value: string; onGenerate: (v: string) => void }) {
+  const [message, setMessage] = useState({ text: "", for: "" });
+
+  return (
+    <>
+      <button
+        type="button"
+        title="Buat password otomatis"
+        aria-label="Buat password otomatis"
+        onClick={() => onGenerate(generatePassword())}
+        className={iconButton}
+      >
+        <RefreshCw className="size-3.5" />
+      </button>
+      <button
+        type="button"
+        title="Salin password"
+        aria-label="Salin password"
+        disabled={!value}
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(value);
+            setMessage({ text: "Disalin", for: value });
+          } catch {
+            // Clipboard tidak tersedia, misalnya di HTTP tanpa SSL.
+            setMessage({ text: "Salin manual", for: value });
+          }
+        }}
+        className={iconButton}
+      >
+        <Copy className="size-3.5" />
+      </button>
+      <span role="status" className="self-center text-xs text-muted">
+        {value && message.for === value ? message.text : ""}
+      </span>
+    </>
+  );
+}
+
 function PasswordCell({ account, run }: { account: AccountRow; run: RunAction }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+  const [visible, setVisible] = useState(false);
+
+  function close() {
+    setOpen(false);
+    setValue("");
+    setVisible(false);
+  }
 
   if (!open) {
     return (
@@ -46,14 +98,11 @@ function PasswordCell({ account, run }: { account: AccountRow; run: RunAction })
       onSubmit={async (e) => {
         e.preventDefault();
         const ok = await run(() => resetAccountPassword(account.id, value));
-        if (ok) {
-          setOpen(false);
-          setValue("");
-        }
+        if (ok) close();
       }}
     >
       <input
-        type="password"
+        type={visible ? "text" : "password"}
         required
         minLength={8}
         autoFocus
@@ -61,7 +110,14 @@ function PasswordCell({ account, run }: { account: AccountRow; run: RunAction })
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder="Min. 8 karakter"
-        className={`${smallSelect} w-40`}
+        className={`${smallSelect} w-40 font-mono`}
+      />
+      <PasswordTools
+        value={value}
+        onGenerate={(v) => {
+          setValue(v);
+          setVisible(true);
+        }}
       />
       <button
         type="submit"
@@ -71,15 +127,34 @@ function PasswordCell({ account, run }: { account: AccountRow; run: RunAction })
       </button>
       <button
         type="button"
-        onClick={() => {
-          setOpen(false);
-          setValue("");
-        }}
+        onClick={close}
         className="h-8 rounded-md px-2 text-xs transition-colors hover:bg-default"
       >
         Batal
       </button>
     </form>
+  );
+}
+
+function HistoryCell({ account }: { account: AccountRow }) {
+  const [open, setOpen] = useState(false);
+  const name = account.full_name || account.username || account.email;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label={`Riwayat login ${name}`}
+        className="inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs text-muted transition-colors hover:bg-default hover:text-foreground"
+      >
+        <History className="size-3.5" />
+        Lihat
+      </button>
+      {open && (
+        <LoginHistoryModal accountId={account.id} accountName={name} onClose={() => setOpen(false)} />
+      )}
+    </>
   );
 }
 
@@ -159,6 +234,9 @@ function AccountLine({
         </label>
       </td>
       <td className="px-4 py-2.5">
+        <HistoryCell account={account} />
+      </td>
+      <td className="px-4 py-2.5">
         <PasswordCell account={account} run={run} />
       </td>
     </tr>
@@ -180,18 +258,22 @@ export function AccountManager({
     role: "user" as Role,
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     const ok = await run(() => createAccount(form));
-    if (ok) setForm({ username: "", full_name: "", email: "", role: "user", password: "" });
+    if (ok) {
+      setForm({ username: "", full_name: "", email: "", role: "user", password: "" });
+      setShowPassword(false);
+    }
   }
 
   return (
     <div className="space-y-4">
       <form
         onSubmit={handleAdd}
-        className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_8rem_1fr_auto] lg:items-end"
+        className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-3 lg:items-end"
       >
         <label className="grid gap-1 text-xs font-medium text-muted">
           <span>Username *</span>
@@ -237,18 +319,28 @@ export function AccountManager({
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-xs font-medium text-muted">
-          <span>Password awal *</span>
-          <input
-            type="password"
-            required
-            minLength={8}
-            autoComplete="new-password"
-            value={form.password}
-            onChange={(e) => setForm({ ...form, password: e.target.value })}
-            className={inputClass}
-          />
-        </label>
+        <div className="grid gap-1 text-xs font-medium text-muted">
+          <label htmlFor="new-password">Password awal *</label>
+          <div className="flex gap-1">
+            <input
+              id="new-password"
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              className={`${inputClass} min-w-0 flex-1 font-mono`}
+            />
+            <PasswordTools
+              value={form.password}
+              onGenerate={(password) => {
+                setForm((f) => ({ ...f, password }));
+                setShowPassword(true);
+              }}
+            />
+          </div>
+        </div>
         <button
           type="submit"
           disabled={pending}
@@ -262,11 +354,11 @@ export function AccountManager({
       <StatusLine
         pending={pending}
         error={error}
-        hint="Isi email yang sama dengan anggota di Anggota Tim untuk memberinya akses login. Username bisa diedit langsung di tabel."
+        hint="Isi email yang sama dengan anggota di Anggota Tim untuk memberinya akses login. Username bisa diedit langsung di tabel. Salin password sebelum menyimpan."
       />
 
       <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-        <table className="w-full min-w-[60rem] border-collapse text-sm">
+        <table className="w-full min-w-[68rem] border-collapse text-sm">
           <thead className="bg-default/60 text-left">
             <tr>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Nama</th>
@@ -274,6 +366,7 @@ export function AccountManager({
               <th className="border-b border-border px-4 py-2.5 font-semibold">Email</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Role</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Status login</th>
+              <th className="border-b border-border px-4 py-2.5 font-semibold">Riwayat</th>
               <th className="border-b border-border px-4 py-2.5 font-semibold">Password</th>
             </tr>
           </thead>

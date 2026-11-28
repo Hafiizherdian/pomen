@@ -3,6 +3,7 @@
 import { pool } from "@/lib/db";
 import { assertRole } from "@/lib/admin-auth";
 import { guardWith, UserError } from "@/lib/admin-guard";
+import { getAccountLoginHistory } from "@/lib/login-history";
 import { hashPassword } from "@/lib/password";
 import { isRole, type Role } from "@/lib/roles";
 import { USERNAME_RE, normalizeUsername } from "@/lib/username";
@@ -127,4 +128,10 @@ export async function resetAccountPassword(id: string, password: string) {
     const hash = await hashPassword(cleanPassword(password));
     await pool.query("update profiles set password_hash = $2 where id = $1", [id, hash]);
   }, "root");
+}
+
+/** Hanya membaca, jadi tidak lewat guardWith (tidak perlu revalidate). */
+export async function getLoginHistoryByAccount(id: string) {
+  await assertRole("root");
+  return getAccountLoginHistory(id);
 }
